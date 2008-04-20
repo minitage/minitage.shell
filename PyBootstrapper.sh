@@ -14,15 +14,6 @@
 version="0.4"
 offline=""
 
-# filter commandline
-# set there offline mode if any
-for arg in $@;do
-    if [[ $arg == "-o" ]] || [[ $arg == "--offline" ]];then
-        offline="y"
-        shift
-    fi
-done
-
 MD5SUM="$(which md5sum)"
 if [[ -f $(which md5 2>/dev/null) ]];then
     MD5SUM="md5 -q"
@@ -39,6 +30,12 @@ elif [[ -f $(which fetch) ]];then
     wget="$(which fetch) -spra -o"
 elif [[ -f $(which wget) ]];then
     wget="/usr/bin/wget -c -O"
+fi
+
+if [[ $(uname) != "Linux" ]];then
+    SED="$(which gsed)"
+else
+    SED="$(which sed)"
 fi
 
 gentoo_mirror="http://85.25.128.62"
@@ -351,7 +348,7 @@ bootstrap() {
 }
 
 main() {
-    bootstrap
+    #bootstrap
     installorupgrade_setuptools || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
     echo "Installation is now finnished."
@@ -393,6 +390,8 @@ for arg in $@;do
     elif [[ "$arg" == "-h" ]] || [[ "$arg" == "--help" ]] ;then
         usage
         exit
+    elif [[ $arg == "-o" ]] || [[ $arg == "--offline" ]];then
+        offline="y"
     else
         cli_dir="$arg"
     fi
