@@ -73,7 +73,7 @@ virtualenv_md5="fb86aabdfc2033612b936cf08ad811ec"
 
 hg_mirror="http://hg.intevation.org/files/mercurial-1.0.tar.gz"
 hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
- 
+
 zc_buildout_mirror="http://pypi.python.org/packages/source/z/zc.buildout/zc.buildout-1.0.1.tar.gz"
 zc_buildout_md5="438748533cdf043791c98799ed4b8cd3"
 
@@ -147,8 +147,8 @@ usage(){
     echo;echo
     echo "${YELLOW} PyBootStrapper $version:"
     echo "${BLUE}$0 $RED $0 [-o|--offline] PREFIX"
-    echo "${GREEN}      Will bootstrap python into PREFIX"
-    echo "${YELLOW}   If you choose offline mode, put you files into PREFIX/downloads"
+    echo "${GREEN}      Will bootstrap python into PREFIX $NORMAL"
+    echo "${YELLOW}   If you choose offline mode, put you files into PREFIX/downloads $NORMAL"
 }
 
 # make a temporary directory and go inside
@@ -336,7 +336,7 @@ installorupgrade_setuptools(){
     download "$virtualenv_mirror" "$virtualenv_md5"
     ez_offline "VirtualEnv"   || die "VirtualEnv installation failed"
     download "$hg_mirror" "$hg_md5"
-    ez_offline "Mercurial"   || die "VirtualEnv installation failed" 
+    ez_offline "Mercurial"   || die "VirtualEnv installation failed"
     download "$zc_buildout_mirror" "$zc_buildout_md5"
     ez_offline  "zc.buildout" || die "zc.buildout installation failed"
 }
@@ -371,7 +371,7 @@ create_destination() {
     download_dir="${prefix}/downloads"
     tmp_dir="${prefix}/tmp"
     python="$prefix/bin/python2.4"
-    ez="$prefix/bin/easy_install" 
+    ez="$prefix/bin/easy_install"
     for dir in "$tmp_dir" "$download_dir";do
         if [[ ! -d "$dir" ]];then
             mkdir "$dir" || die "creation of $dir failed"
@@ -399,7 +399,7 @@ for arg in $@;do
 done
 
 # about to install
-if [[ ! -d "$cli_dir" ]] && [[ ! -n "$test_mode" ]];then
+if [[ -z "$cli_dir" ]] && [[ ! -n "$test_mode" ]];then
     usage
     die "You must precise the directory to bootstrap to."
 else
