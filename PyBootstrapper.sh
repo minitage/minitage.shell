@@ -326,7 +326,7 @@ installorupgrade_setuptools(){
     # check the download is good
     download "$ez_mirror" "$ez_md5" "$myfullpath"
     res=$("$python" "$download_dir/$myfullpath")
-    res=$(echo $res|sed -re "s/.*(-U\s*setuptools).*/reinstall/g")
+    res=$(echo $res|$SED -re "s/.*(-U\s*setuptools).*/reinstall/g")
     if [[ "$res" == "reinstall" ]];then
         "$python" "$download_dir/$myfullpath" -U setuptools
     fi
@@ -348,7 +348,7 @@ bootstrap() {
 }
 
 main() {
-    #bootstrap
+    bootstrap
     installorupgrade_setuptools || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
     echo "Installation is now finnished."
