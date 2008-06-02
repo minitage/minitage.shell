@@ -56,8 +56,8 @@ zlib_md5="dee233bf288ee795ac96a98cc2e369b6"
 ncurses_mirror="$gnu_mirror/ncurses/ncurses-5.6.tar.gz"
 ncurses_md5="b6593abe1089d6aab1551c105c9300e3"
 
-python_mirror="http://www.python.org/ftp/python/2.4.4/Python-2.4.4.tar.bz2"
-python_md5="0ba90c79175c017101100ebf5978e906"
+python_mirror="http://www.python.org/ftp/python/2.5.2/Python-2.5.2.tar.bz2"
+python_md5="afb5451049eda91fbde10bd5a4b7fadc"
 
 openssl_mirror="http://www.openssl.org/source/openssl-0.9.7m.tar.gz"
 openssl_md5="74a4d1b87e1e6e1ec95dbe58cb4c5b9a"
@@ -318,6 +318,7 @@ compile_python(){
 
 ez_offline() {
     egg="$1"
+    ez="ls $prefix/bin/easy_install"
     "$ez" -H None -f "$download_dir" "$egg" || die "easy install failed for egg"
 }
 
@@ -325,7 +326,9 @@ installorupgrade_setuptools(){
     local myfullpath="ez.py"
     # check the download is good
     download "$ez_mirror" "$ez_md5" "$myfullpath"
+    pushd $prefix
     res=$("$python" "$download_dir/$myfullpath")
+    popd
     res=$(echo $res|$SED -re "s/.*(-U\s*setuptools).*/reinstall/g")
     if [[ "$res" == "reinstall" ]];then
         "$python" "$download_dir/$myfullpath" -U setuptools
@@ -367,8 +370,7 @@ create_destination() {
     prefix="$(pwd)"
     download_dir="${prefix}/downloads"
     tmp_dir="${prefix}/tmp"
-    python="$prefix/bin/python2.4"
-    ez="$prefix/bin/easy_install"
+    python="$prefix/bin/python"
     for dir in "$tmp_dir" "$download_dir";do
         if [[ ! -d "$dir" ]];then
             mkdir "$dir" || die "creation of $dir failed"
