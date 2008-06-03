@@ -318,7 +318,7 @@ compile_python(){
 
 ez_offline() {
     egg="$1"
-    ez="ls $prefix/bin/easy_install"
+    ez="$(ls $prefix/bin/easy_install*|tail -n1)"
     "$ez" -H None -f "$download_dir" "$egg" || die "easy install failed for egg"
 }
 
