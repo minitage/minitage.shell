@@ -56,7 +56,7 @@ zlib_md5="dee233bf288ee795ac96a98cc2e369b6"
 ncurses_mirror="$gnu_mirror/ncurses/ncurses-5.6.tar.gz"
 ncurses_md5="b6593abe1089d6aab1551c105c9300e3"
 
-python_mirror="http://www.python.org/ftp/python/2.4.5§g/Python-2.5.2.tar.bz2"
+python_mirror="http://www.python.org/ftp/python/2.4.5/Python-2.4.5.tar.bz2"
 python_md5="aade3958cb097cc1c69ae0074297d359"
 
 openssl_mirror="http://www.openssl.org/source/openssl-0.9.7m.tar.gz"
