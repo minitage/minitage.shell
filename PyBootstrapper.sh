@@ -143,6 +143,14 @@ download(){
     fi
 }
 
+# get mas os patches
+get_macos_patches() {
+    # openssl
+    download http://distfiles.minitage.org/public/externals/minitage/patches/openssl-0.9.8h-macos.diff d9bca87496daff6a8b51972dbe0ba48a  openssl-0.9.8h-macos.diff
+    # readline
+    download http://ftp.gnu.org/gnu/readline/readline-5.2-patches/readline52-012 e3e9f441c8111589855bc363e5640f6c readline52-012
+}
+
 # usage error
 usage(){
     echo;echo
@@ -168,6 +176,12 @@ mkdir_and_gointo(){
     fi
 }
 
+set_mac_target() {
+    if [[ $UNAME == "Darwin"  ]];then
+        LDFLAGS="$LDFLAGS -mmacosx-version-min=10.5.0" 
+    fi 
+}
+
 # $1: name for errors NOT SET TO NULL OR SHOOT IN YOUR FEES
 # $@ compile opts
 cmmi() {
@@ -178,11 +192,9 @@ cmmi() {
     export CFLAGS=" -I$prefix/usr/include"
     export CPPFLAGS="$CFLAGS"
     export CXXFLAGS="$CFLAGS"
-    export LDFLAGS="-Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
+    export LDFLAGS=" -Wl,-rpath -Wl,$prefix/lib -Wl,-rpath -Wl,/lib"
     export LD_RUN_PATH="$prefix"
-    if [[ $UNAME == "Darwin"  ]];then
-        LDFLAGS="$LDFLAGS -mmacosx-version-min=10.5"
-    fi
+    set_mac_target
     make clean
     ./configure $@ || die "$1 config failed"
     echo "Compiling:"
@@ -212,6 +224,7 @@ compile_bz2() {
     mkdir_and_gointo "bz2"
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
+    set_mac_target
     make CFLAGS="$bz2_cflags"
     if [[ "$UNAME" == "$MINGW_UNAME" ]];then
         for i in bzip2 bunzip2 bzcat bzip2 bzip2recover;do
@@ -244,11 +257,15 @@ compile_readline(){
     mkdir_and_gointo "readline"
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
+    if [[ $UNAME  == 'Darwin' ]];then
+        patch -p0 < "$download_dir/readline52-012"
+    fi
     export CFLAGS=" -I$prefix/include  -I$prefix/include/ncurses"
     export CPPFLAGS="$CFLAGS"
     export CXXFLAGS="$CFLAGS"
-    export LDFLAGS=" -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
+    export LDFLAGS=" -Wl,-rpath -Wl,$prefix/lib -Wl,-rpath -Wl,/lib "
     export LD_RUN_PATH="$prefix"
+    set_mac_target
     make clean
     ./configure -prefix="$prefix"  || die "$1 config failed"
     echo "Compiling:"
@@ -278,20 +295,22 @@ compile_openssl(){
     download "$openssl_mirror" "$openssl_md5" "$myfullpath"
     mkdir_and_gointo "openssl"
     tar xzvf "$download_dir/$myfullpath" -C .
+    ldflags=" -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
     cd *
-    if [[ $(uname) == 'FreeBSD' ]];then
+    if [[ $UNAME == 'FreeBSD' ]];then
         platform='FreeBSD-elf';
     fi
     if [[ $(uname) == 'Darwin' ]];then
-        platform='darwin-i386-cc -mmacosx-version-min=10.5.0' ;
+        ldflags="$ldflags  -mmacosx-version-min=10.5.0"
+        platform='' 
+        patch  -p1 < "$download_dir/openssl-0.9.8h-macos.diff"
     fi
     if [[ $UNAME == $MINGW_UNAME ]];then
-        pwd
         gsed -re "s/if exist/#if exist/g"  -i util/pl/Mingw32.pl ms/mingw32a.mak
         start ".\\ms\\mingw32.bat"
     fi
-    ./config --prefix="$prefix" shared ${flags:cflags} ${flags:ldflags} no-fips "$platform"
-    if [[ $(uname) == 'FreeBSD' ]];then
+    ./config --prefix="$prefix" shared $ldflags no-fips "$platform"
+    if [[ $UNAME == 'FreeBSD' ]];then
         gsed \
         -e 's|^FIPS_DES_ENC=|#FIPS_DES_ENC=|' \
         -e 's|^FIPS_SHA1_ASM_OBJ=|#FIPS_SHA1_ASM_OBJ=|' \
@@ -358,17 +377,20 @@ installorupgrade_setuptools(){
 }
 
 bootstrap() {
-    compile_bz2	     || die "compile_and_install_bz2 failed"
-    compile_zlib     || die "compile_and_installzlib failed"
-    if [[ "$UNAME" != "$MINGW_UNAME" ]];then
-        compile_ncurses  || die "compile_and_install ncurses failed"
-    fi
+    #compile_bz2	     || die "compile_and_install_bz2 failed"
+    #compile_zlib     || die "compile_and_installzlib failed"
+    #if [[ "$UNAME" != "$MINGW_UNAME" ]];then
+    #    compile_ncurses  || die "compile_and_install ncurses failed"
+    #fi
     compile_readline || die "compile_and_install_readline failed"
-    compile_openssl  || die "compile_and_install_openssl failed"
-    compile_python   || die "compile_and_install_python failed"
+    #compile_openssl  || die "compile_and_install_openssl failed"
+    #compile_python   || die "compile_and_install_python failed"
 }
 
 main() {
+    if [[ $UNAME == 'Darwin' ]];then
+        get_macos_patches
+    fi
     bootstrap
     installorupgrade_setuptools || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
