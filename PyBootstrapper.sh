@@ -23,13 +23,13 @@ fi
 export PATH="$prefix/bin:$prefix:/sbin:$PATH"
 
 #another macosx hack
-if [[ -f $(which curl) ]];then
+if [[ -f $(which curl 2>&1) ]];then
     wget="$(which curl) -a -o"
     # freebsd
-elif [[ -f $(which fetch) ]];then
+elif [[ -f $(which fetch 2>&1) ]];then
     wget="$(which fetch) -spra -o"
 elif [[ -f $(which wget) ]];then
-    wget="/usr/bin/wget -c -O"
+    wget="$(which wget)  -c -O"
 fi
 
 if [[ $(uname) != "Linux" ]];then
@@ -59,8 +59,8 @@ ncurses_md5="b6593abe1089d6aab1551c105c9300e3"
 python_mirror="http://www.python.org/ftp/python/2.5.2/Python-2.5.2.tar.bz2"
 python_md5="afb5451049eda91fbde10bd5a4b7fadc"
 
-openssl_mirror="http://www.openssl.org/source/openssl-0.9.7m.tar.gz"
-openssl_md5="74a4d1b87e1e6e1ec95dbe58cb4c5b9a"
+openssl_mirror="http://www.openssl.org/source/openssl-0.9.8h.tar.gz"
+openssl_md5="7d3d41dafc76cf2fcb5559963b5783b3"
 
 ez_mirror="http://peak.telecommunity.com/dist/ez_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
@@ -80,6 +80,10 @@ YELLOW=$'\e[33;01m'
 RED=$'\e[31;01m'
 BLUE=$'\e[34;01m'
 NORMAL=$'\e[0m'
+
+
+UNAME="$(uname)"
+MINGW_UNAME="MINGW32_NT-5.1"
 
 # display an error message and exit
 die() {
@@ -176,6 +180,9 @@ cmmi() {
     export CXXFLAGS="$CFLAGS"
     export LDFLAGS="-Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
     export LD_RUN_PATH="$prefix"
+    if [[ $UNAME == "Darwin"  ]];then
+        LDFLAGS="$LDFLAGS -mmacosx-version-min=10.5"
+    fi
     make clean
     ./configure $@ || die "$1 config failed"
     echo "Compiling:"
@@ -206,6 +213,11 @@ compile_bz2() {
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
     make CFLAGS="$bz2_cflags"
+    if [[ "$UNAME" == "$MINGW_UNAME" ]];then
+        for i in bzip2 bunzip2 bzcat bzip2 bzip2recover;do
+            gsed -re "s/(a\+x.*$i).*/\1.exe/g" -i  Makefile
+        done
+    fi
     make install PREFIX="$prefix" || die "make install failed"
     for i in libbz2.so.* libbz2.a ;do
         if [[  -e "$i" ]];then
@@ -214,7 +226,6 @@ compile_bz2() {
     done
     cp bzlib.h "$prefix/include" || die "shared include installation failed"
 }
-
 compile_zlib(){
     local myfullpath="zlib.tbz2"
     # check the download is good
@@ -273,6 +284,11 @@ compile_openssl(){
     fi
     if [[ $(uname) == 'Darwin' ]];then
         platform='darwin-i386-cc -mmacosx-version-min=10.5.0' ;
+    fi
+    if [[ $UNAME == $MINGW_UNAME ]];then
+        pwd
+        gsed -re "s/if exist/#if exist/g"  -i util/pl/Mingw32.pl ms/mingw32a.mak
+        start ".\\ms\\mingw32.bat"
     fi
     ./config --prefix="$prefix" shared ${flags:cflags} ${flags:ldflags} no-fips "$platform"
     if [[ $(uname) == 'FreeBSD' ]];then
@@ -344,7 +360,9 @@ installorupgrade_setuptools(){
 bootstrap() {
     compile_bz2	     || die "compile_and_install_bz2 failed"
     compile_zlib     || die "compile_and_installzlib failed"
-    compile_ncurses  || die "compile_and_install ncurses failed"
+    if [[ "$UNAME" != "$MINGW_UNAME" ]];then
+        compile_ncurses  || die "compile_and_install ncurses failed"
+    fi
     compile_readline || die "compile_and_install_readline failed"
     compile_openssl  || die "compile_and_install_openssl failed"
     compile_python   || die "compile_and_install_python failed"
