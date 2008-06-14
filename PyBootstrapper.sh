@@ -14,6 +14,8 @@
 version="0.4"
 offline=""
 
+UNAME="$(uname)"
+
 MD5SUM="$(which md5sum)"
 if [[ -f $(which md5 2>/dev/null) ]];then
     MD5SUM="md5 -q"
@@ -32,11 +34,12 @@ elif [[ -f $(which wget) ]];then
     wget="$(which wget)  -c -O"
 fi
 
-if [[ $(uname) != "Linux" ]];then
-    SED="$(which gsed)"
+
+if [[ -f $(which gsed 2>&1) ]];then
+SED="$(which gsed)"
 else
     SED="$(which sed)"
-fi
+fi 
 
 gentoo_mirror="http://85.25.128.62"
 #gentoo_mirror="ftp://gentoo.imj.fr/pub"
@@ -65,14 +68,15 @@ openssl_md5="7d3d41dafc76cf2fcb5559963b5783b3"
 ez_mirror="http://peak.telecommunity.com/dist/ez_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
 
-virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.0.tar.gz"
-virtualenv_md5="fb86aabdfc2033612b936cf08ad811ec"
+virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.1.tar.gz"
+virtualenv_md5="8931b66dbb799120583dd107aab2fa89"
 
 hg_mirror="http://hg.intevation.org/files/mercurial-1.0.tar.gz"
 hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
 
 zc_buildout_mirror="http://pypi.python.org/packages/source/z/zc.buildout/zc.buildout-1.0.1.tar.gz"
 zc_buildout_md5="438748533cdf043791c98799ed4b8cd3"
+
 
 # pretty term colors
 GREEN=$'\e[32;01m'
@@ -82,8 +86,7 @@ BLUE=$'\e[34;01m'
 NORMAL=$'\e[0m'
 
 
-UNAME="$(uname)"
-MINGW_UNAME="MINGW32_NT-5.1"
+
 
 # display an error message and exit
 die() {
@@ -150,6 +153,11 @@ get_macos_patches() {
     # readline
     download http://ftp.gnu.org/gnu/readline/readline-5.2-patches/readline52-012 e3e9f441c8111589855bc363e5640f6c readline52-012
 }
+get_win32_patches() {
+    # readline
+    # this patch comes from http://gpsim.sourceforge.net/gpsimWin32/packages/readline-5.2-20061112-src.zip
+    download http://distfiles.minitage.org/public/externals/minitage/patches/readline-5.2-src.diff  a635c45040ffd0c39f46ad6c404f5c85  readline-5.2-src.diff
+}
 
 # usage error
 usage(){
@@ -178,8 +186,8 @@ mkdir_and_gointo(){
 
 set_mac_target() {
     if [[ $UNAME == "Darwin"  ]];then
-        LDFLAGS="$LDFLAGS -mmacosx-version-min=10.5.0" 
-    fi 
+        LDFLAGS="$LDFLAGS -mmacosx-version-min=10.5.0"
+    fi
 }
 
 # $1: name for errors NOT SET TO NULL OR SHOOT IN YOUR FEES
@@ -226,11 +234,6 @@ compile_bz2() {
     cd *
     set_mac_target
     make CFLAGS="$bz2_cflags"
-    if [[ "$UNAME" == "$MINGW_UNAME" ]];then
-        for i in bzip2 bunzip2 bzcat bzip2 bzip2recover;do
-            gsed -re "s/(a\+x.*$i).*/\1.exe/g" -i  Makefile
-        done
-    fi
     make install PREFIX="$prefix" || die "make install failed"
     for i in libbz2.so.* libbz2.a ;do
         if [[  -e "$i" ]];then
@@ -285,7 +288,7 @@ compile_ncurses(){
     cmmi  "$myname"  --enable-const --enable-colorfgbg --enable-echo  \
     --with-manpage-format=normal --with-rcs-ids --enable-symlinks     \
     --disable-termcap --with-shared \
-    $(if [[ $(uname) != 'Darwin' ]];then echo '--with-libtool';fi) \
+    $(if [[ $UNAME != 'Darwin' ]];then echo '--with-libtool';fi) \
     --prefix="$prefix" || die "cmmi failed for $myname"
 }
 
@@ -300,14 +303,10 @@ compile_openssl(){
     if [[ $UNAME == 'FreeBSD' ]];then
         platform='FreeBSD-elf';
     fi
-    if [[ $(uname) == 'Darwin' ]];then
+    if [[ $UNAME == 'Darwin' ]];then
         ldflags="$ldflags  -mmacosx-version-min=10.5.0"
-        platform='' 
+        platform=''
         patch  -p1 < "$download_dir/openssl-0.9.8h-macos.diff"
-    fi
-    if [[ $UNAME == $MINGW_UNAME ]];then
-        gsed -re "s/if exist/#if exist/g"  -i util/pl/Mingw32.pl ms/mingw32a.mak
-        start ".\\ms\\mingw32.bat"
     fi
     ./config --prefix="$prefix" shared $ldflags no-fips "$platform"
     if [[ $UNAME == 'FreeBSD' ]];then
@@ -332,15 +331,16 @@ compile_python(){
     tar xjvf "$download_dir/$myfullpath" -C .
     cd *
     # XXX OSX hack
-    CFLAGS="  -I$prefix/include -I$prefix/include/ncurses -I.    $([[ $(uname) == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0  -D__DARWIN_UNIX03 ')"
-    LDFLAGS=" -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib' $([[ $(uname) == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0')"
+    CFLAGS="  -I$prefix/include -I$prefix/include/ncurses -I.    $([[ $UNAME == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0  -D__DARWIN_UNIX03 ')"
+    LDFLAGS=" -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib' $([[ $UNAME == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0')"
     export CFLAGS="$CFLAGS" CPPFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
     export LD_RUN_PATH="$prefix/lib"
     #not using cmmi as i need specific linkings
     ./configure  --prefix="$prefix"   \
-    --enable-shared --with-fpectl --with-bz2 \
-    $(if [[ $(uname) == 'Darwin' ]];then echo "--enable-toolbox-glue";fi) \
-    --with-readline --with-zlib --with-ncurses \
+    --enable-shared  --with-bz2 \
+    $(if [[ $UNAME == 'Darwin' ]];then echo "--enable-toolbox-glue";fi) \
+    $(if [[ $UNAME != CYGWIN* ]];then echo "--with-fpectl";fi) \
+    --with-readline --with-zlib \
     OPT="$CFLAGS" \
     CPPFLAGS="$CFLAGS" \
     LDFLAGS="$LDFLAGS" \
@@ -361,15 +361,25 @@ installorupgrade_setuptools(){
     local myfullpath="ez.py"
     # check the download is good
     download "$ez_mirror" "$ez_md5" "$myfullpath"
-    pushd $prefix
+    qpushd $prefix
     res=$("$python" "$download_dir/$myfullpath")
-    popd
+    qpopd
     res=$(echo $res|$SED -re "s/.*(-U\s*setuptools).*/reinstall/g")
     if [[ "$res" == "reinstall" ]];then
-        "$python" "$download_dir/$myfullpath" -U setuptools
+       "$python" "$download_dir/$myfullpath" -U setuptools
     fi
     download "$virtualenv_mirror" "$virtualenv_md5"
-    ez_offline "VirtualEnv"   || die "VirtualEnv installation failed"
+    if [[ $UNAME == CYGWIN* ]];then
+        qpushd $prefix/tmp
+        # openssl
+        download http://distfiles.minitage.org/public/externals/minitage/patches/virtualenv.win.diff 6c3d9b5f103a380041991d9c0714a73b virtenv.diff 
+        tar xzvf "$download_dir/virtualenv-1.1.tar.gz"
+        cd virtualenv-1.1
+        patch -p0<"$download_dir/virtenv.diff"
+        "$python" setup.py install
+    else
+        ez_offline "VirtualEnv"   || die "VirtualEnv installation failed"
+    fi
     download "$hg_mirror" "$hg_md5"
     ez_offline "Mercurial"   || die "VirtualEnv installation failed"
     download "$zc_buildout_mirror" "$zc_buildout_md5"
@@ -379,9 +389,7 @@ installorupgrade_setuptools(){
 bootstrap() {
     compile_bz2	     || die "compile_and_install_bz2 failed"
     compile_zlib     || die "compile_and_installzlib failed"
-    if [[ "$UNAME" != "$MINGW_UNAME" ]];then
-        compile_ncurses  || die "compile_and_install ncurses failed"
-    fi
+    compile_ncurses  || die "compile_and_install ncurses failed"
     compile_readline || die "compile_and_install_readline failed"
     compile_openssl  || die "compile_and_install_openssl failed"
     compile_python   || die "compile_and_install_python failed"
@@ -391,7 +399,7 @@ main() {
     if [[ $UNAME == 'Darwin' ]];then
         get_macos_patches
     fi
-    bootstrap
+    #bootstrap
     installorupgrade_setuptools || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
     echo "Installation is now finnished."
