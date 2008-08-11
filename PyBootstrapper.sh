@@ -59,8 +59,12 @@ zlib_md5="dee233bf288ee795ac96a98cc2e369b6"
 ncurses_mirror="$gnu_mirror/ncurses/ncurses-5.6.tar.gz"
 ncurses_md5="b6593abe1089d6aab1551c105c9300e3"
 
-python_mirror="http://www.python.org/ftp/python/2.5.2/Python-2.5.2.tar.bz2"
-python_md5="afb5451049eda91fbde10bd5a4b7fadc"
+python24_mirror="http://www.python.org/ftp/python/2.4.5/Python-2.4.5.tar.bz2"
+python24_md5="aade3958cb097cc1c69ae0074297d359"
+python25_mirror="http://www.python.org/ftp/python/2.5.2/Python-2.5.2.tar.bz2"
+python25_md5="afb5451049eda91fbde10bd5a4b7fadc"
+python_mirror=$python25_mirror
+python_md5=$python25_md5
 
 openssl_mirror="http://www.openssl.org/source/openssl-0.9.8h.tar.gz"
 openssl_md5="7d3d41dafc76cf2fcb5559963b5783b3"
@@ -77,16 +81,12 @@ hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
 zc_buildout_mirror="http://pypi.python.org/packages/source/z/zc.buildout/zc.buildout-1.0.1.tar.gz"
 zc_buildout_md5="438748533cdf043791c98799ed4b8cd3"
 
-
 # pretty term colors
 GREEN=$'\e[32;01m'
 YELLOW=$'\e[33;01m'
 RED=$'\e[31;01m'
 BLUE=$'\e[34;01m'
 NORMAL=$'\e[0m'
-
-
-
 
 # display an error message and exit
 die() {
@@ -163,9 +163,10 @@ get_win32_patches() {
 usage(){
     echo;echo
     echo "${YELLOW} PyBootStrapper $version:"
-    echo "${BLUE}$0 $RED $0 [-o|--offline] PREFIX"
+    echo "${BLUE}$0 $RED $0 [-o|--offline] [-2.4] PREFIX"
     echo "${GREEN}      Will bootstrap python into PREFIX $NORMAL"
     echo "${YELLOW}   If you choose offline mode, put you files into PREFIX/downloads $NORMAL"
+    echo "${YELLOW}   If you choose to build python2.4 instead of 2.5, add -2.4 to args. $NORMAL"
 }
 
 # make a temporary directory and go inside
@@ -387,11 +388,11 @@ installorupgrade_setuptools(){
 }
 
 bootstrap() {
-    compile_bz2	     || die "compile_and_install_bz2 failed"
-    compile_zlib     || die "compile_and_installzlib failed"
-    compile_ncurses  || die "compile_and_install ncurses failed"
-    compile_readline || die "compile_and_install_readline failed"
-    compile_openssl  || die "compile_and_install_openssl failed"
+    #compile_bz2	     || die "compile_and_install_bz2 failed"
+    #compile_zlib     || die "compile_and_installzlib failed"
+    #compile_ncurses  || die "compile_and_install ncurses failed"
+    #compile_readline || die "compile_and_install_readline failed"
+    #compile_openssl  || die "compile_and_install_openssl failed"
     compile_python   || die "compile_and_install_python failed"
 }
 
@@ -436,10 +437,14 @@ for arg in $@;do
         test_mode="true"
     elif [[ "$arg" == "--offline" ]];then
         offline="y"
-        shift
     elif [[ "$arg" == "-h" ]] || [[ "$arg" == "--help" ]] ;then
         usage
         exit
+    elif [[ $arg == "-2.4" ]] || [[ $arg == "--python-2.4" ]];then
+        echo "$YELLOW User choosed to Build python-2.4 !$NORMAL"
+        sleep 2
+        python_mirror="$python24_mirror"
+        python_md5="$python24_md5"
     elif [[ $arg == "-o" ]] || [[ $arg == "--offline" ]];then
         offline="y"
     else
