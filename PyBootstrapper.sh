@@ -388,11 +388,11 @@ installorupgrade_setuptools(){
 }
 
 bootstrap() {
-    #compile_bz2	     || die "compile_and_install_bz2 failed"
-    #compile_zlib     || die "compile_and_installzlib failed"
-    #compile_ncurses  || die "compile_and_install ncurses failed"
-    #compile_readline || die "compile_and_install_readline failed"
-    #compile_openssl  || die "compile_and_install_openssl failed"
+    compile_bz2	     || die "compile_and_install_bz2 failed"
+    compile_zlib     || die "compile_and_installzlib failed"
+    compile_ncurses  || die "compile_and_install ncurses failed"
+    compile_readline || die "compile_and_install_readline failed"
+    compile_openssl  || die "compile_and_install_openssl failed"
     compile_python   || die "compile_and_install_python failed"
 }
 
