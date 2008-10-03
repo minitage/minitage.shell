@@ -72,6 +72,7 @@ openssl_md5="7d3d41dafc76cf2fcb5559963b5783b3"
 ez_mirror="http://peak.telecommunity.com/dist/ez_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
 ez_md5="494757ae608c048e1c491c5d4e0a81e6"
+ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
 
 virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.1.tar.gz"
 virtualenv_md5="8931b66dbb799120583dd107aab2fa89"
