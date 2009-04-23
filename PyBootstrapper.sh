@@ -11,7 +11,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; see the file COPYING. If not, write to the
 # Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-version="0.4"
+version="1.0"
 offline=""
 
 UNAME="$(uname)"
@@ -39,7 +39,7 @@ if [[ -f $(which gsed 2>&1) ]];then
 SED="$(which gsed)"
 else
     SED="$(which sed)"
-fi 
+fi
 
 gentoo_mirror="http://85.25.128.62"
 #gentoo_mirror="ftp://gentoo.imj.fr/pub"
@@ -61,27 +61,28 @@ ncurses_md5="b6593abe1089d6aab1551c105c9300e3"
 
 python24_mirror="http://www.python.org/ftp/python/2.4.5/Python-2.4.5.tar.bz2"
 python24_md5="aade3958cb097cc1c69ae0074297d359"
-python25_mirror="http://www.python.org/ftp/python/2.5.2/Python-2.5.2.tar.bz2"
-python25_md5="afb5451049eda91fbde10bd5a4b7fadc"
+python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
+python25_md5="394a5f56a5ce811fb0f023197ec0833e"
 python_mirror=$python25_mirror
 python_md5=$python25_md5
 
-openssl_mirror="http://www.openssl.org/source/openssl-0.9.8h.tar.gz"
-openssl_md5="7d3d41dafc76cf2fcb5559963b5783b3"
+openssl_mirror="http://www.openssl.org/source/openssl-0.9.8k.tar.gz"
+openssl_md5="e555c6d58d276aec7fdc53363e338ab3"
 
 ez_mirror="http://peak.telecommunity.com/dist/ez_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
 ez_md5="494757ae608c048e1c491c5d4e0a81e6"
 ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
+ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
 
-virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.1.tar.gz"
-virtualenv_md5="8931b66dbb799120583dd107aab2fa89"
+virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.3.3.tar.gz"
+virtualenv_md5="28e2955aed4ffc4dc3df02dc632b5c42"
 
 hg_mirror="http://hg.intevation.org/files/mercurial-1.0.tar.gz"
 hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
 
-zc_buildout_mirror="http://pypi.python.org/packages/source/z/zc.buildout/zc.buildout-1.0.1.tar.gz"
-zc_buildout_md5="438748533cdf043791c98799ed4b8cd3"
+zc_buildout_mirror="http://pypi.python.org/packages/source/z/zc.buildout/zc.buildout-1.2.1.tar.gz"
+zc_buildout_md5="e81b0c75be7bfbd640978f75e773f904"
 
 # pretty term colors
 GREEN=$'\e[32;01m'
@@ -207,11 +208,11 @@ cmmi() {
     export LD_RUN_PATH="$prefix"
     set_mac_target
     make clean
-    ./configure $@ || die "$1 config failed"
+    ./configure $@ || die "$myname config failed"
     echo "Compiling:"
-    make || die "$1 compilation failed"
+    make #|| die "$myname compilation failed"
     echo "Installing:"
-    make install || die "$1 install failed"
+    make install || die "$myname install failed"
     unset CFLAGS CPPFLAGS CXXFLAGS LDFLAGS LD_RUN_PATH
 }
 
@@ -283,15 +284,16 @@ compile_readline(){
 
 compile_ncurses(){
     local myfullpath="ncurses.tgz"
+    myname=ncurses
     # check the download is good
     download "$ncurses_mirror" "$ncurses_md5" "$myfullpath"
-    mkdir_and_gointo "ncurses"
+    mkdir_and_gointo "$myname"
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
-    cmmi  "$myname"  --enable-const --enable-colorfgbg --enable-echo  \
-    --with-manpage-format=normal --with-rcs-ids --enable-symlinks     \
-    --disable-termcap --with-shared \
-    $(if [[ $UNAME != 'Darwin' ]];then echo '--with-libtool';fi) \
+    cmmi  "$myname" --enable-const --enable-colorfgbg --enable-echo\
+    --with-shared --enable-rpath \
+    --with-manpage-format=normal --with-rcs-ids --enable-symlinks \
+    $(if [[ $UNAME == 'Darwin' ]];then echo '--without-libtool';fi) \
     --prefix="$prefix" || die "cmmi failed for $myname"
 }
 
@@ -375,7 +377,7 @@ installorupgrade_setuptools(){
     if [[ $UNAME == CYGWIN* ]];then
         qpushd $prefix/tmp
         # openssl
-        download http://distfiles.minitage.org/public/externals/minitage/patches/virtualenv.win.diff 6c3d9b5f103a380041991d9c0714a73b virtenv.diff 
+        download http://distfiles.minitage.org/public/externals/minitage/patches/virtualenv.win.diff 6c3d9b5f103a380041991d9c0714a73b virtenv.diff
         tar xzvf "$download_dir/virtualenv-1.1.tar.gz"
         cd virtualenv-1.1
         patch -p0<"$download_dir/virtenv.diff"
@@ -383,8 +385,8 @@ installorupgrade_setuptools(){
     else
         ez_offline "VirtualEnv"   || die "VirtualEnv installation failed"
     fi
-    download "$hg_mirror" "$hg_md5"
-    ez_offline "Mercurial"   || die "VirtualEnv installation failed"
+    #download "$hg_mirror" "$hg_md5"
+    #ez_offline "Mercurial"   || die "VirtualEnv installation failed"
     download "$zc_buildout_mirror" "$zc_buildout_md5"
     ez_offline  "zc.buildout" || die "zc.buildout installation failed"
 }
