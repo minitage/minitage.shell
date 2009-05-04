@@ -201,12 +201,13 @@ cmmi() {
     shift
     compile_opts="$@"
     echo "Running: ./configure $@"
-    export CFLAGS=" -I$prefix/usr/include"
+    export CFLAGS=" -fPIC -O3 -I$prefix/include "
     export CPPFLAGS="$CFLAGS"
     export CXXFLAGS="$CFLAGS"
     export LDFLAGS=" -Wl,-rpath -Wl,$prefix/lib -Wl,-rpath -Wl,/lib"
     export LD_RUN_PATH="$prefix"
     set_mac_target
+    echo $CFLAGS
     make clean
     ./configure $@ || die "$myname config failed"
     echo "Compiling:"
@@ -239,6 +240,8 @@ compile_bz2() {
     set_mac_target
     make CFLAGS="$bz2_cflags"
     make install PREFIX="$prefix" || die "make install failed"
+    # the libbz2 shared library
+    make  -f Makefile-libbz2_so all || die "Make failed libbz2"
     for i in libbz2.so.* libbz2.a ;do
         if [[  -e "$i" ]];then
             cp "$i" "$prefix/lib" || die "shared librairies installation failed"
@@ -246,14 +249,14 @@ compile_bz2() {
     done
     cp bzlib.h "$prefix/include" || die "shared include installation failed"
 }
-compile_zlib(){
+compile_zlib() {
     local myfullpath="zlib.tbz2"
     # check the download is good
     download "$zlib_mirror" "$zlib_md5" "$myfullpath"
     mkdir_and_gointo "zlib"
     tar xjvf "$download_dir/$myfullpath" -C .
     cd *
-    cmmi  "$myname" --prefix="$prefix" --shared || die "cmmi failed for $myname"
+    cmmi  "$myname" --shared --prefix="$prefix" || die "cmmi failed for $myname"
     make test || die "zlib test failed"
 }
 
@@ -277,8 +280,10 @@ compile_readline(){
     ./configure -prefix="$prefix"  || die "$1 config failed"
     echo "Compiling:"
     make || die "$1 compilation failed"
+
     echo "Installing:"
     make install || die "$1 install failed"
+
     unset CFLAGS CPPFLAGS LDFLAGS LD_RUN_PATH
 }
 
