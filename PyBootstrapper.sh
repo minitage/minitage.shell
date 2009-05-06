@@ -52,6 +52,9 @@ readline_md5="e39331f32ad14009b9ff49cc10c5e751"
 
 bz2_mirror="$gentoo_mirror/gentoo/distfiles/bzip2-1.0.4.tar.gz"
 bz2_md5="fc310b254f6ba5fbb5da018f04533688"
+bz2_darwinpatch="http://distfiles.minitage.org/public/externals/minitage/patch-Makefile-dylib.diff"
+bz2_darwinpatch_md5="7f42ae89030ebe7279c80c2119f4b29d"
+
 
 zlib_mirror="$gentoo_mirror/gentoo/distfiles/zlib-1.2.3.tar.bz2"
 zlib_md5="dee233bf288ee795ac96a98cc2e369b6"
@@ -238,10 +241,20 @@ compile_bz2() {
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
     set_mac_target
+    if [[ $uname != 'Darwin' ]];then
+        download "$bz2_darwinpatch" "$bz2_darwinpatch_md5" "bz2darwin.patch";
+        patch="$download_dir/bz2darwin.patch"
+        sed "s|__MacPorts_Compatibility_Version__|1.0|"  $patch\
+            | sed "s|__MacPorts_Version__|1.0.4|"\
+            | patch -p0 
+    fi
     make CFLAGS="$bz2_cflags"
     make install PREFIX="$prefix" || die "make install failed"
     # the libbz2 shared library
-    make  -f Makefile-libbz2_so all || die "Make failed libbz2"
+
+    if [[ $UNAME != 'Darwin' ]];then
+        make  -f Makefile-libbz2_so all || die "Make failed libbz2"
+    fi
     for i in libbz2.so.* libbz2.a ;do
         if [[  -e "$i" ]];then
             cp "$i" "$prefix/lib" || die "shared librairies installation failed"
