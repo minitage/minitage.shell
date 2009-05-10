@@ -62,8 +62,8 @@ zlib_md5="dee233bf288ee795ac96a98cc2e369b6"
 ncurses_mirror="$gnu_mirror/ncurses/ncurses-5.6.tar.gz"
 ncurses_md5="b6593abe1089d6aab1551c105c9300e3"
 
-python24_mirror="http://www.python.org/ftp/python/2.4.5/Python-2.4.5.tar.bz2"
-python24_md5="aade3958cb097cc1c69ae0074297d359"
+python24_mirror="http://www.python.org/ftp/python/2.4.6/Python-2.4.6.tar.bz2"
+python24_md5="76083277f6c7e4d78992f36d7ad9018d"
 python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
 python25_md5="394a5f56a5ce811fb0f023197ec0833e"
 python_mirror=$python25_mirror
@@ -157,7 +157,7 @@ get_macos_patches() {
     # openssl
     download http://distfiles.minitage.org/public/externals/minitage/patches/openssl-0.9.8h-macos.diff d9bca87496daff6a8b51972dbe0ba48a  openssl-0.9.8h-macos.diff
     # readline
-    download http://ftp.gnu.org/gnu/readline/readline-5.2-patches/readline52-012 e3e9f441c8111589855bc363e5640f6c readline52-012
+    download http://distfiles.minitage.org/public/externals/minitage/readline52-1to13.patch af3408e06c3f91cca895cebc1fe8a36c readline52-012
 }
 get_win32_patches() {
     # readline
@@ -280,9 +280,7 @@ compile_readline(){
     mkdir_and_gointo "readline"
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
-    if [[ $UNAME  == 'Darwin' ]];then
-        patch -p0 < "$download_dir/readline52-012"
-    fi
+    patch -Np1 < "$download_dir/readline52-012"
     export CFLAGS=" -I$prefix/include  -I$prefix/include/ncurses"
     export CPPFLAGS="$CFLAGS"
     export CXXFLAGS="$CFLAGS"
@@ -359,12 +357,6 @@ compile_python(){
     export CFLAGS="$CFLAGS" CPPFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
     export LD_RUN_PATH="$prefix/lib"
     #not using cmmi as i need specific linkings
-    if [[ $UNAME == 'Darwin' ]];then
-        if [[ $(uname -r) == '9.6.0' ]];then
-            export MACOSX_DEPLOYMENT_TARGET=10.5
-            export CONFIGURE_MACOSX_DEPLOYMENT_TARGET=10.5
-        fi
-    fi
     ./configure  --prefix="$prefix"   \
     --enable-shared  --with-bz2 \
     $(if [[ $UNAME == 'Darwin' ]];then echo "--enable-toolbox-glue";fi) \
@@ -375,6 +367,13 @@ compile_python(){
     LDFLAGS="$LDFLAGS" \
     --includedir="$prefix/include" \
     --libdir="$prefix/lib"|| die "cmmi failed for python"
+    if [[ $UNAME == 'Darwin' ]];then
+        cp pyconfig.h pyconfig.h.old
+        cat pyconfig.h.old|grep -v  SETPGRP >pyconfig.h
+        echo >> pyconfig.h
+        echo "#define   SETPGRP_HAVE_ARG 1">> pyconfig.h
+        echo >> pyconfig.h
+    fi
     make || die "python compilation failed"
     make install || die "python install failed"
     unset CFLAGS CPPFLAGS LDFLAGS OPT LD_RUN_PATH
@@ -416,11 +415,11 @@ installorupgrade_setuptools(){
 }
 
 bootstrap() {
-    #compile_bz2	     || die "compile_and_install_bz2 failed"
-    #compile_zlib     || die "compile_and_installzlib failed"
-    #compile_ncurses  || die "compile_and_install ncurses failed"
-    #compile_readline || die "compile_and_install_readline failed"
-    #compile_openssl  || die "compile_and_install_openssl failed"
+    compile_bz2	     || die "compile_and_install_bz2 failed"
+    compile_zlib     || die "compile_and_installzlib failed"
+    compile_ncurses  || die "compile_and_install ncurses failed"
+    compile_readline || die "compile_and_install_readline failed"
+    compile_openssl  || die "compile_and_install_openssl failed"
     compile_python   || die "compile_and_install_python failed"
 }
 
