@@ -29,7 +29,7 @@ if [[ -f $(which curl 2>&1) ]];then
     wget="$(which curl) -a -o"
 # freebsd
 elif [[ -f $(which fetch 2>&1) ]];then
-    wget="$(which fetch) -spra -o"
+    wget="$(which fetch) -pra -o"
 elif [[ -f $(which wget) ]];then
     wget="$(which wget)  -c -O"
 fi
