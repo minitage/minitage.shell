@@ -241,7 +241,7 @@ compile_bz2() {
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
     set_mac_target
-    if [[ $uname != 'Darwin' ]];then
+    if [[ $UNAME == 'Darwin' ]];then
         download "$bz2_darwinpatch" "$bz2_darwinpatch_md5" "bz2darwin.patch";
         patch="$download_dir/bz2darwin.patch"
         sed "s|__MacPorts_Compatibility_Version__|1.0|"  $patch\
