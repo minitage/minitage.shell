@@ -27,7 +27,7 @@ export PATH="$prefix/bin:$prefix:/sbin:$PATH"
 #another macosx hack
 if [[ -f $(which curl 2>&1) ]];then
     wget="$(which curl) -a -o"
-    # freebsd
+# freebsd
 elif [[ -f $(which fetch 2>&1) ]];then
     wget="$(which fetch) -spra -o"
 elif [[ -f $(which wget) ]];then
