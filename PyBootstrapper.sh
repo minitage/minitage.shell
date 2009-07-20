@@ -66,8 +66,10 @@ python24_mirror="http://www.python.org/ftp/python/2.4.6/Python-2.4.6.tar.bz2"
 python24_md5="76083277f6c7e4d78992f36d7ad9018d"
 python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
 python25_md5="394a5f56a5ce811fb0f023197ec0833e"
-python_mirror=$python25_mirror
-python_md5=$python25_md5
+python26_mirror="http://python.org/ftp/python/2.6.2/Python-2.6.2.tar.bz2"
+python26_md5="245db9f1e0f09ab7e0faaa0cf7301011"
+python_mirror=$python26_mirror
+python_md5=$python26_md5
 
 openssl_mirror="http://www.openssl.org/source/openssl-0.9.8k.tar.gz"
 openssl_md5="e555c6d58d276aec7fdc53363e338ab3"
@@ -156,8 +158,6 @@ download(){
 get_macos_patches() {
     # openssl
     download http://distfiles.minitage.org/public/externals/minitage/patches/openssl-0.9.8h-macos.diff d9bca87496daff6a8b51972dbe0ba48a  openssl-0.9.8h-macos.diff
-    # readline
-    download http://distfiles.minitage.org/public/externals/minitage/readline52-1to13.patch af3408e06c3f91cca895cebc1fe8a36c readline52-012
 }
 get_win32_patches() {
     # readline
@@ -169,10 +169,11 @@ get_win32_patches() {
 usage(){
     echo;echo
     echo "${YELLOW} PyBootStrapper $version:"
-    echo "${BLUE}$0 $RED $0 [-o|--offline] [-2.4] PREFIX"
-    echo "${GREEN}      Will bootstrap python into PREFIX $NORMAL"
+    echo "${BLUE}$0 $RED $0 [-o|--offline] [-2.4|-2.5] PREFIX"
+    echo "${GREEN}      Will bootstrap python (2.6 by default) into PREFIX $NORMAL"
     echo "${YELLOW}   If you choose offline mode, put you files into PREFIX/downloads $NORMAL"
-    echo "${YELLOW}   If you choose to build python2.4 instead of 2.5, add -2.4 to args. $NORMAL"
+    echo "${YELLOW}   If you choose to build python2.4 instead of 2.6, add -2.4 to args. $NORMAL"
+    echo "${YELLOW}   If you choose to build python2.5 instead of 2.6, add -2.5 to args. $NORMAL"
 }
 
 # make a temporary directory and go inside
@@ -207,7 +208,11 @@ cmmi() {
     export CFLAGS=" -fPIC -O3 -I$prefix/include "
     export CPPFLAGS="$CFLAGS"
     export CXXFLAGS="$CFLAGS"
-    export LDFLAGS=" -Wl,-rpath -Wl,$prefix/lib -Wl,-rpath -Wl,/lib"
+    if [[ $UNAME == 'FreeBSD' ]];then
+        export LDFLAGS=" -rpath $prefix/lib -rpath /lib"
+    else    
+        export LDFLAGS=" -Wl,-rpath -Wl,$prefix/lib -Wl,-rpath -Wl,/lib"
+    fi
     export LD_RUN_PATH="$prefix"
     set_mac_target
     echo $CFLAGS
@@ -277,6 +282,7 @@ compile_readline(){
     local myfullpath="readline.tgz"
     # check the download is good
     download "$readline_mirror" "$readline_md5" "$myfullpath"
+    download http://distfiles.minitage.org/public/externals/minitage/readline52-1to13.patch af3408e06c3f91cca895cebc1fe8a36c readline52-012  
     mkdir_and_gointo "readline"
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
@@ -322,14 +328,14 @@ compile_openssl(){
     ldflags=" -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
     cd *
     if [[ $UNAME == 'FreeBSD' ]];then
-        platform='FreeBSD-elf';
+        platform=""
     fi
     if [[ $UNAME == 'Darwin' ]];then
         ldflags="$ldflags  -mmacosx-version-min=10.5.0"
         platform=''
         patch  -p1 < "$download_dir/openssl-0.9.8h-macos.diff"
     fi
-    ./config --prefix="$prefix" shared $ldflags no-fips "$platform"
+    ./config --prefix="$prefix" shared $ldflags no-fips  "$platform" 
     if [[ $UNAME == 'FreeBSD' ]];then
         gsed \
         -e 's|^FIPS_DES_ENC=|#FIPS_DES_ENC=|' \
@@ -340,6 +346,7 @@ compile_openssl(){
         -e 's|^SHLIBDIRS= fips|SHLIBDIRS=|' \
         -i  ./Makefile || die "gsed failed"
     fi
+    make depend || die "make depend openssl failed"
     make || die "make openssl failed"
     make install || die "make install openssl failed"
 }
@@ -353,7 +360,7 @@ compile_python(){
     cd *
     # XXX OSX hack
     CFLAGS="  -I$prefix/include -I$prefix/include/ncurses -I.    $([[ $UNAME == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0  -D__DARWIN_UNIX03 ')"
-    LDFLAGS=" -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib' $([[ $UNAME == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0')"
+    LDFLAGS=" -L$prefix/lib -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib' $([[ $UNAME == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0')"
     export CFLAGS="$CFLAGS" CPPFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
     export LD_RUN_PATH="$prefix/lib"
     #not using cmmi as i need specific linkings
@@ -415,7 +422,7 @@ installorupgrade_setuptools(){
 }
 
 bootstrap() {
-    compile_bz2	     || die "compile_and_install_bz2 failed"
+    compile_bz2     || die "compile_and_install_bz2 failed"
     compile_zlib     || die "compile_and_installzlib failed"
     compile_ncurses  || die "compile_and_install ncurses failed"
     compile_readline || die "compile_and_install_readline failed"
@@ -472,6 +479,11 @@ for arg in $@;do
         sleep 2
         python_mirror="$python24_mirror"
         python_md5="$python24_md5"
+    elif [[ $arg == "-2.5" ]] || [[ $arg == "--python-2.5" ]];then
+        echo "$YELLOW User choosed to Build python-2.5 !$NORMAL"
+        sleep 2
+        python_mirror="$python25_mirror"
+        python_md5="$python25_md5" 
     elif [[ $arg == "-o" ]] || [[ $arg == "--offline" ]];then
         offline="y"
     else
