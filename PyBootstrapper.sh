@@ -66,28 +66,29 @@ python24_mirror="http://www.python.org/ftp/python/2.4.6/Python-2.4.6.tar.bz2"
 python24_md5="76083277f6c7e4d78992f36d7ad9018d"
 python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
 python25_md5="394a5f56a5ce811fb0f023197ec0833e"
-python26_mirror="http://python.org/ftp/python/2.6.2/Python-2.6.2.tar.bz2"
-python26_md5="245db9f1e0f09ab7e0faaa0cf7301011"
+python26_mirror="http://www.python.org/ftp/python/2.6.4/Python-2.6.4rc2.tar.bz2"
+python26_md5="d62a59ab16cb017a15be9e5a0eb92dec"
 python_mirror=$python26_mirror
 python_md5=$python26_md5
 
 openssl_mirror="http://www.openssl.org/source/openssl-0.9.8k.tar.gz"
 openssl_md5="e555c6d58d276aec7fdc53363e338ab3"
 
-ez_mirror="http://peak.telecommunity.com/dist/ez_setup.py"
+ez_mirror="http://python-distribute.org/distribute_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
 ez_md5="494757ae608c048e1c491c5d4e0a81e6"
 ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
 ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
+ez_md5=""
 
-virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.3.3.tar.gz"
-virtualenv_md5="28e2955aed4ffc4dc3df02dc632b5c42"
+virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv-distribute/virtualenv-distribute-1.3.4.4.zip"
+virtualenv_md5="f09c82ffd7ad3a0c4bcf9e6c5c49a164"
 
 hg_mirror="http://hg.intevation.org/files/mercurial-1.0.tar.gz"
 hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
 
-zc_buildout_mirror="http://pypi.python.org/packages/source/z/zc.buildout/zc.buildout-1.2.1.tar.gz"
-zc_buildout_md5="e81b0c75be7bfbd640978f75e773f904"
+zc_buildout_mirror="http://pypi.python.org/packages/source/z/zc.buildout/zc.buildout-1.4.1.tar.gz"
+zc_buildout_md5="b710b535a458724551f2676cd92f4246"
 
 # pretty term colors
 GREEN=$'\e[32;01m'
@@ -128,7 +129,7 @@ check_md5() {
 #don't put "/" at the end of the URL or provide a file name
 download(){
     local md5="$2" myfile="$3" url="$1" mydest=""
-    if [[ -n "$md5" ]] && [[ -n "$url" ]];then
+    if [[ -n "$url" ]];then
         if [[ ! -e "$download_dir" ]];then
             mkdir -p "$download_dir" || die "cant create download dir: $download_dir"
         fi
@@ -148,7 +149,9 @@ download(){
             file_md5="$($MD5SUM $mydest|awk '{print $1}')"
         fi
         if [[ "$md5" != "$file_md5" ]];then
-            die "$myfile doesn't match the md5 "$md5" ($file_md5)"
+            if [[ -n "$md5" ]];then
+                echo  "!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!! $myfile doesn't match the md5 "$md5" ($file_md5)"
+            fi
         fi
         echo "Downloaded $mydest"
     fi
@@ -399,9 +402,9 @@ installorupgrade_setuptools(){
     qpushd $prefix
     res=$("$python" "$download_dir/$myfullpath")
     qpopd
-    res=$(echo $res|$SED -re "s/.*(-U\s*setuptools).*/reinstall/g")
+    res=$(echo $res|$SED -re "s/.*(-U\s*distribute).*/reinstall/g")
     if [[ "$res" == "reinstall" ]];then
-       "$python" "$download_dir/$myfullpath" -U setuptools
+       "$python" "$download_dir/$myfullpath" -U Distribute
     fi
     download "$virtualenv_mirror" "$virtualenv_md5"
     if [[ $UNAME == CYGWIN* ]];then
@@ -434,7 +437,7 @@ main() {
     if [[ $UNAME == 'Darwin' ]];then
         get_macos_patches
     fi
-    bootstrap
+    #bootstrap
     installorupgrade_setuptools || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
     echo "Installation is now finnished."
