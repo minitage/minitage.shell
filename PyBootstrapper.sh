@@ -437,7 +437,7 @@ main() {
     if [[ $UNAME == 'Darwin' ]];then
         get_macos_patches
     fi
-    #bootstrap
+    bootstrap
     installorupgrade_setuptools || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
     echo "Installation is now finnished."
