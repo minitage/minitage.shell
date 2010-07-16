@@ -41,8 +41,8 @@ else
     SED="$(which sed)"
 fi
 
-gentoo_mirror="http://85.25.128.62"
 #gentoo_mirror="ftp://gentoo.imj.fr/pub"
+gentoo_mirror="http://gentoo.tiscali.nl/"
 gentoo_mirror="$gentoo_mirror"
 
 gnu_mirror="http://ftp.gnu.org/pub/gnu"
@@ -50,13 +50,13 @@ gnu_mirror="http://ftp.gnu.org/pub/gnu"
 readline_mirror="$gentoo_mirror/gentoo/distfiles/readline-5.2.tar.gz"
 readline_md5="e39331f32ad14009b9ff49cc10c5e751"
 
-bz2_mirror="$gentoo_mirror/gentoo/distfiles/bzip2-1.0.4.tar.gz"
-bz2_md5="fc310b254f6ba5fbb5da018f04533688"
+bz2_mirror="$gentoo_mirror/distfiles/bzip2-1.0.5.tar.gz"
+bz2_md5="3c15a0c8d1d3ee1c46a1634d00617b1a"
 bz2_darwinpatch="http://distfiles.minitage.org/public/externals/minitage/patch-Makefile-dylib.diff"
 bz2_darwinpatch_md5="7f42ae89030ebe7279c80c2119f4b29d"
 
 
-zlib_mirror="$gentoo_mirror/gentoo/distfiles/zlib-1.2.3.tar.bz2"
+zlib_mirror="$gentoo_mirror/distfiles/zlib-1.2.3.tar.bz2"
 zlib_md5="dee233bf288ee795ac96a98cc2e369b6"
 
 ncurses_mirror="$gnu_mirror/ncurses/ncurses-5.6.tar.gz"
