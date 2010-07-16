@@ -47,7 +47,7 @@ gentoo_mirror="$gentoo_mirror"
 
 gnu_mirror="http://ftp.gnu.org/pub/gnu"
 
-readline_mirror="$gentoo_mirror/gentoo/distfiles/readline-5.2.tar.gz"
+readline_mirror="http://distfiles.minitage.org/public/externals/minitage/readline-5.2.tar.gz"
 readline_md5="e39331f32ad14009b9ff49cc10c5e751"
 
 bz2_mirror="$gentoo_mirror/distfiles/bzip2-1.0.5.tar.gz"
