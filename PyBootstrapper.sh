@@ -66,7 +66,6 @@ python24_mirror="http://www.python.org/ftp/python/2.4.6/Python-2.4.6.tar.bz2"
 python24_md5="76083277f6c7e4d78992f36d7ad9018d"
 python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
 python25_md5="394a5f56a5ce811fb0f023197ec0833e"
-<<<<<<< HEAD
 python26_mirror="http://python.org/ftp/python/2.6.6/Python-2.6.6.tar.bz2"
 python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
 python_mirror=$python26_mirror
@@ -74,15 +73,6 @@ python_md5=$python26_md5
 
 openssl_mirror="http://www.openssl.org/source/openssl-0.9.8o.tar.gz"
 openssl_md5="63ddc5116488985e820075e65fbe6aa4"
-=======
-python26_mirror="http://www.python.org/ftp/python/2.6.5/Python-2.6.5.tar.bz2"
-python26_md5="6bef0417e71a1a1737ccf5750420fdb3"
-python_mirror=$python26_mirror
-python_md5=$python26_md5
-
-openssl_mirror="http://www.openssl.org/source/openssl-0.9.8m.tar.gz"
-openssl_md5="898bf125370926d5f692a2201124f8ec"
->>>>>>> b73ea1a2124840d5bde5d51d2a35bae6fe465017
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
