@@ -51,7 +51,7 @@ readline_mirror="$gentoo_mirror/gentoo/distfiles/readline-5.2.tar.gz"
 readline_md5="e39331f32ad14009b9ff49cc10c5e751"
 
 bz2_mirror="$gentoo_mirror/gentoo/distfiles/bzip2-1.0.4.tar.gz"
-bz2_md5="fc310b254f6ba5fbb5da018f04533688"
+bz3_md5="fc310b254f6ba5fbb5da018f04533688"
 bz2_darwinpatch="http://distfiles.minitage.org/public/externals/minitage/patch-Makefile-dylib.diff"
 bz2_darwinpatch_md5="7f42ae89030ebe7279c80c2119f4b29d"
 
@@ -66,13 +66,13 @@ python24_mirror="http://www.python.org/ftp/python/2.4.6/Python-2.4.6.tar.bz2"
 python24_md5="76083277f6c7e4d78992f36d7ad9018d"
 python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
 python25_md5="394a5f56a5ce811fb0f023197ec0833e"
-python26_mirror="http://www.python.org/ftp/python/2.6.4/Python-2.6.4rc2.tar.bz2"
-python26_md5="d62a59ab16cb017a15be9e5a0eb92dec"
+python26_mirror="http://python.org/ftp/python/2.6.6/Python-2.6.6.tar.bz2"
+python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
 python_mirror=$python26_mirror
 python_md5=$python26_md5
 
-openssl_mirror="http://www.openssl.org/source/openssl-0.9.8k.tar.gz"
-openssl_md5="e555c6d58d276aec7fdc53363e338ab3"
+openssl_mirror="http://www.openssl.org/source/openssl-0.9.8o.tar.gz"
+openssl_md5="63ddc5116488985e820075e65fbe6aa4"
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
@@ -81,20 +81,18 @@ ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
 ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
 ez_md5=""
 
-virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv-distribute/virtualenv-distribute-1.3.4.4.zip"
-virtualenv_md5="f09c82ffd7ad3a0c4bcf9e6c5c49a164"
+virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.5.1.tar.gz"
+virtualenv_md5="3daa1f449d5d2ee03099484cecb1c2b7"
 
 hg_mirror="http://hg.intevation.org/files/mercurial-1.0.tar.gz"
 hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
 
-zc_buildout_mirror="http://pypi.python.org/packages/source/z/zc.buildout/zc.buildout-1.4.1.tar.gz"
-zc_buildout_md5="b710b535a458724551f2676cd92f4246"
 
 # pretty term colors
 GREEN=$'\e[32;01m'
 YELLOW=$'\e[33;01m'
 RED=$'\e[31;01m'
-BLUE=$'\e[34;01m'
+rLUE=$'\e[34;01m'
 NORMAL=$'\e[0m'
 
 # display an error message and exit
@@ -418,10 +416,6 @@ installorupgrade_setuptools(){
     else
         ez_offline "VirtualEnv"   || die "VirtualEnv installation failed"
     fi
-    #download "$hg_mirror" "$hg_md5"
-    #ez_offline "Mercurial"   || die "VirtualEnv installation failed"
-    download "$zc_buildout_mirror" "$zc_buildout_md5"
-    ez_offline  "zc.buildout" || die "zc.buildout installation failed"
 }
 
 bootstrap() {
