@@ -41,22 +41,22 @@ else
     SED="$(which sed)"
 fi
 
-gentoo_mirror="http://85.25.128.62"
 #gentoo_mirror="ftp://gentoo.imj.fr/pub"
+gentoo_mirror="http://gentoo.tiscali.nl/"
 gentoo_mirror="$gentoo_mirror"
 
 gnu_mirror="http://ftp.gnu.org/pub/gnu"
 
-readline_mirror="$gentoo_mirror/gentoo/distfiles/readline-5.2.tar.gz"
+readline_mirror="http://distfiles.minitage.org/public/externals/minitage/readline-5.2.tar.gz"
 readline_md5="e39331f32ad14009b9ff49cc10c5e751"
 
-bz2_mirror="$gentoo_mirror/gentoo/distfiles/bzip2-1.0.4.tar.gz"
-bz3_md5="fc310b254f6ba5fbb5da018f04533688"
+bz2_mirror="$gentoo_mirror/distfiles/bzip2-1.0.5.tar.gz"
+bz2_md5="3c15a0c8d1d3ee1c46a1634d00617b1a"
 bz2_darwinpatch="http://distfiles.minitage.org/public/externals/minitage/patch-Makefile-dylib.diff"
 bz2_darwinpatch_md5="7f42ae89030ebe7279c80c2119f4b29d"
 
 
-zlib_mirror="$gentoo_mirror/gentoo/distfiles/zlib-1.2.3.tar.bz2"
+zlib_mirror="$gentoo_mirror/distfiles/zlib-1.2.3.tar.bz2"
 zlib_md5="dee233bf288ee795ac96a98cc2e369b6"
 
 ncurses_mirror="$gnu_mirror/ncurses/ncurses-5.6.tar.gz"
@@ -66,6 +66,7 @@ python24_mirror="http://www.python.org/ftp/python/2.4.6/Python-2.4.6.tar.bz2"
 python24_md5="76083277f6c7e4d78992f36d7ad9018d"
 python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
 python25_md5="394a5f56a5ce811fb0f023197ec0833e"
+<<<<<<< HEAD
 python26_mirror="http://python.org/ftp/python/2.6.6/Python-2.6.6.tar.bz2"
 python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
 python_mirror=$python26_mirror
@@ -73,6 +74,15 @@ python_md5=$python26_md5
 
 openssl_mirror="http://www.openssl.org/source/openssl-0.9.8o.tar.gz"
 openssl_md5="63ddc5116488985e820075e65fbe6aa4"
+=======
+python26_mirror="http://www.python.org/ftp/python/2.6.5/Python-2.6.5.tar.bz2"
+python26_md5="6bef0417e71a1a1737ccf5750420fdb3"
+python_mirror=$python26_mirror
+python_md5=$python26_md5
+
+openssl_mirror="http://www.openssl.org/source/openssl-0.9.8m.tar.gz"
+openssl_md5="898bf125370926d5f692a2201124f8ec"
+>>>>>>> b73ea1a2124840d5bde5d51d2a35bae6fe465017
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
