@@ -211,7 +211,7 @@ cmmi() {
     export CXXFLAGS="$CFLAGS"
     if [[ $UNAME == 'FreeBSD' ]];then
         export LDFLAGS=" -rpath $prefix/lib -rpath /lib"
-    else    
+    else
         export LDFLAGS=" -Wl,-rpath -Wl,$prefix/lib -Wl,-rpath -Wl,/lib"
     fi
     export LD_RUN_PATH="$prefix"
@@ -252,7 +252,7 @@ compile_bz2() {
         patch="$download_dir/bz2darwin.patch"
         sed "s|__MacPorts_Compatibility_Version__|1.0|"  $patch\
             | sed "s|__MacPorts_Version__|1.0.4|"\
-            | patch -p0 
+            | patch -p0
     fi
     make CFLAGS="$bz2_cflags"
     make install PREFIX="$prefix" || die "make install failed"
@@ -283,7 +283,7 @@ compile_readline(){
     local myfullpath="readline.tgz"
     # check the download is good
     download "$readline_mirror" "$readline_md5" "$myfullpath"
-    download http://distfiles.minitage.org/public/externals/minitage/readline52-1to13.patch af3408e06c3f91cca895cebc1fe8a36c readline52-012  
+    download http://distfiles.minitage.org/public/externals/minitage/readline52-1to13.patch af3408e06c3f91cca895cebc1fe8a36c readline52-012
     mkdir_and_gointo "readline"
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
@@ -336,7 +336,7 @@ compile_openssl(){
         platform=''
         patch  -p1 < "$download_dir/openssl-0.9.8h-macos.diff"
     fi
-    ./config --prefix="$prefix" shared $ldflags no-fips  "$platform" 
+    ./config --prefix="$prefix" shared $ldflags no-fips  "$platform"
     if [[ $UNAME == 'FreeBSD' ]];then
         gsed \
         -e 's|^FIPS_DES_ENC=|#FIPS_DES_ENC=|' \
@@ -366,7 +366,7 @@ compile_python(){
     export LD_RUN_PATH="$prefix/lib"
     #not using cmmi as i need specific linkings
     ./configure  --prefix="$prefix"   \
-    --enable-shared  --with-bz2 \
+    --enable-shared  --with-bz2   --enable-unicode=ucs4 \
     $(if [[ $UNAME == 'Darwin' ]];then echo "--enable-toolbox-glue";fi) \
     $(if [[ $UNAME != CYGWIN* ]];then echo "--with-fpectl";fi) \
     --with-readline --with-zlib \
@@ -480,7 +480,7 @@ for arg in $@;do
         echo "$YELLOW User choosed to Build python-2.5 !$NORMAL"
         sleep 2
         python_mirror="$python25_mirror"
-        python_md5="$python25_md5" 
+        python_md5="$python25_md5"
     elif [[ $arg == "-o" ]] || [[ $arg == "--offline" ]];then
         offline="y"
     else
