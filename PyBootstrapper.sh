@@ -47,20 +47,19 @@ gentoo_mirror="$gentoo_mirror"
 
 gnu_mirror="http://ftp.gnu.org/pub/gnu"
 
-readline_mirror="http://distfiles.minitage.org/public/externals/minitage/readline-5.2.tar.gz"
-readline_md5="e39331f32ad14009b9ff49cc10c5e751"
+readline_mirror="http://distfiles.minitage.org/public/externals/minitage/readline-6.1.tar.gz"
+readline_md5="fc2f7e714fe792db1ce6ddc4c9fb4ef3"
 
-bz2_mirror="$gentoo_mirror/distfiles/bzip2-1.0.5.tar.gz"
-bz2_md5="3c15a0c8d1d3ee1c46a1634d00617b1a"
+bz2_mirror="$gentoo_mirror/distfiles/bzip2-1.0.6.tar.gz"
+bz2_md5="00b516f4704d4a7cb50a1d97e6e8e15b"
 bz2_darwinpatch="http://distfiles.minitage.org/public/externals/minitage/patch-Makefile-dylib.diff"
 bz2_darwinpatch_md5="7f42ae89030ebe7279c80c2119f4b29d"
-
 
 zlib_mirror="$gentoo_mirror/distfiles/zlib-1.2.3.tar.bz2"
 zlib_md5="dee233bf288ee795ac96a98cc2e369b6"
 
-ncurses_mirror="$gnu_mirror/ncurses/ncurses-5.6.tar.gz"
-ncurses_md5="b6593abe1089d6aab1551c105c9300e3"
+ncurses_mirror="$gnu_mirror/ncurses/ncurses-5.7.tar.gz"
+ncurses_md5="cce05daf61a64501ef6cd8da1f727ec6"
 
 python24_mirror="http://www.python.org/ftp/python/2.4.6/Python-2.4.6.tar.bz2"
 python24_md5="76083277f6c7e4d78992f36d7ad9018d"
@@ -71,8 +70,8 @@ python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
 python_mirror=$python26_mirror
 python_md5=$python26_md5
 
-openssl_mirror="http://www.openssl.org/source/openssl-0.9.8o.tar.gz"
-openssl_md5="63ddc5116488985e820075e65fbe6aa4"
+openssl_mirror="http://www.openssl.org/source/openssl-1.0.0c.tar.gz"
+openssl_md5="ff8fb85610aef328315a9decbb2712e4"
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
@@ -283,11 +282,13 @@ compile_readline(){
     local myfullpath="readline.tgz"
     # check the download is good
     download "$readline_mirror" "$readline_md5" "$myfullpath"
-    download http://distfiles.minitage.org/public/externals/minitage/readline52-1to13.patch af3408e06c3f91cca895cebc1fe8a36c readline52-012
+    download http://distfiles.minitage.org/public/externals/minitage/readline61-001 c642f2e84d820884b0bf9fd176bc6c3f readline61-001
+    download http://distfiles.minitage.org/public/externals/minitage/readline61-002 1a76781a1ea734e831588285db7ec9b1 readline61-002
     mkdir_and_gointo "readline"
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
-    patch -Np1 < "$download_dir/readline52-012"
+    patch -Np0 < "$download_dir/readline61-001"
+    patch -Np0 < "$download_dir/readline61-002"
     export CFLAGS=" -I$prefix/include  -I$prefix/include/ncurses"
     export CPPFLAGS="$CFLAGS"
     export CXXFLAGS="$CFLAGS"
@@ -418,13 +419,22 @@ installorupgrade_setuptools(){
     fi
 }
 
+compile() {
+    local done="$prefix/.compiled$1"
+    if [[ ! -f $done ]];then
+        "compile_$1" && touch $done
+    else
+        echo "WARNING: $1 is already compiled (delete '$done' to recompile)."
+    fi
+}
+
 bootstrap() {
-    compile_bz2     || die "compile_and_install_bz2 failed"
-    compile_zlib     || die "compile_and_installzlib failed"
-    compile_ncurses  || die "compile_and_install ncurses failed"
-    compile_readline || die "compile_and_install_readline failed"
-    compile_openssl  || die "compile_and_install_openssl failed"
-    compile_python   || die "compile_and_install_python failed"
+    compile bz2      || die "compile_and_install_bz2 failed"
+    compile zlib     || die "compile_and_installzlib failed"
+    compile ncurses  || die "compile_and_install ncurses failed"
+    compile readline || die "compile_and_install_readline failed"
+    compile openssl  || die "compile_and_install_openssl failed"
+    compile python   || die "compile_and_install_python failed"
 }
 
 main() {
