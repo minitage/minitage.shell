@@ -322,22 +322,30 @@ compile_ncurses(){
 }
 
 compile_openssl(){
-    local myfullpath="openssl.tgz" platform=""
+    local myfullpath="openssl.tgz" platform="" ldflags=""
     # check the download is good
     download "$openssl_mirror" "$openssl_md5" "$myfullpath"
     mkdir_and_gointo "openssl"
     tar xzvf "$download_dir/$myfullpath" -C .
     ldflags=" -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
+    sconfigure="./config"
     cd *
     if [[ $UNAME == 'FreeBSD' ]];then
         platform=""
     fi
     if [[ $UNAME == 'Darwin' ]];then
         ldflags="$ldflags  -mmacosx-version-min=10.5.0"
+        if [[ $(uname -r|cut -c1-4  ) == "10.5" ]];then
+            ldflags="$ldflags darwin64-x86_64-cc"
+        fi 
         platform=''
-        patch  -p1 < "$download_dir/openssl-0.9.8h-macos.diff"
+        sconfigure="./Configure"
     fi
-    ./config --prefix="$prefix" shared $ldflags no-fips  "$platform"
+    if [[ $UNAME == 'Darwin' ]];then
+        $sconfigure --prefix="$prefix" --openssldir=="$prefix/etc/ssl" shared no-fips "$platform" $ldflags 
+    else
+        $sconfigure --prefix="$prefix" --openssldir=="$prefix/etc/ssl" shared $ldflags no-fips  "$platform"
+    fi
     if [[ $UNAME == 'FreeBSD' ]];then
         gsed \
         -e 's|^FIPS_DES_ENC=|#FIPS_DES_ENC=|' \
