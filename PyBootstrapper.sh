@@ -24,12 +24,14 @@ fi
 # export PATH to have bzip2 and our perso binaries everywhere
 export PATH="$prefix/bin:$prefix:/sbin:$PATH"
 
-#another macosx hack
-if [[ -f $(which curl 2>&1) ]];then
-    wget="$(which curl) -a -o"
 # freebsd
-elif [[ -f $(which fetch 2>&1) ]];then
-    wget="$(which fetch) -pra -o"
+if [[ $(uname) == "FreeBSD" ]];then
+    if [[ -f $(which fetch 2>&1) ]];then
+        wget="$(which fetch) -pra -o"
+    fi
+#another macosx hack
+elif [[ -f $(which curl 2>&1) ]];then
+    wget="$(which curl) -a -o"
 elif [[ -f $(which wget) ]];then
     wget="$(which wget)  -c -O"
 fi
@@ -370,6 +372,7 @@ compile_python(){
     cd *
     # XXX OSX hack
     CFLAGS="  -I$prefix/include -I$prefix/include/ncurses -I.    $([[ $UNAME == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0  -D__DARWIN_UNIX03 ')"
+    CFLAGS="$CFLAGS   $([[ $UNAME == 'FreeBSD' ]] && echo '-DTHREAD_STACK_SIZE=0x100000')"
     LDFLAGS=" -L$prefix/lib -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib' $([[ $UNAME == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0')"
     export CFLAGS="$CFLAGS" CPPFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS"
     export LD_RUN_PATH="$prefix/lib"
