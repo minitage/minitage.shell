@@ -72,8 +72,8 @@ python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
 python_mirror=$python26_mirror
 python_md5=$python26_md5
 
-openssl_mirror="http://www.openssl.org/source/openssl-1.0.0c.tar.gz"
-openssl_md5="ff8fb85610aef328315a9decbb2712e4"
+openssl_mirror="http://www.openssl.org/source/openssl-1.0.0d.tar.gz"
+openssl_md5="40b6ea380cc8a5bf9734c2f8bf7e701e"
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
@@ -337,14 +337,13 @@ compile_openssl(){
     fi
     if [[ $UNAME == 'Darwin' ]];then
         ldflags="$ldflags  -mmacosx-version-min=10.5.0"
-        if [[ $(uname -r|cut -c1-4  ) == "10.5" ]];then
-            ldflags="$ldflags darwin64-x86_64-cc"
+        if [[ $(uname -r|cut -c1-3  ) == "10." ]];then
+            platform="darwin64-x86_64-cc"
         fi 
-        platform=''
         sconfigure="./Configure"
     fi
     if [[ $UNAME == 'Darwin' ]];then
-        $sconfigure --prefix="$prefix" --openssldir=="$prefix/etc/ssl" shared no-fips "$platform" $ldflags 
+        $sconfigure --prefix="$prefix" --openssldir=="$prefix/etc/ssl" shared no-fips "$platform" $ldflags
     else
         $sconfigure --prefix="$prefix" --openssldir=="$prefix/etc/ssl" shared $ldflags no-fips  "$platform"
     fi
@@ -449,9 +448,9 @@ bootstrap() {
 }
 
 main() {
-    if [[ $UNAME == 'Darwin' ]];then
-        get_macos_patches
-    fi
+    #if [[ $UNAME == 'Darwin' ]];then
+    #    get_macos_patches
+    #fi
     bootstrap
     installorupgrade_setuptools || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
@@ -520,4 +519,4 @@ else
         main "$prefix"
     fi
 fi
-# vim:set ts=4 sts=4 sw=4 et ai ft=sh tw=80 :
+# vim:set ts=4 sts=4 sw=4 et ai ft=sh tw=0 :
