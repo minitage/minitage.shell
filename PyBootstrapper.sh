@@ -69,13 +69,13 @@ python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
 python25_md5="394a5f56a5ce811fb0f023197ec0833e"
 python26_mirror="http://python.org/ftp/python/2.6.6/Python-2.6.6.tar.bz2"
 python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
-python27_mirror="http://python.org/ftp/python/2.7.2/Python-2.7.2.tar.bz2"
-python27_md5="ba7b2f11ffdbf195ee0d111b9455a5bd" 
+python27_mirror="http://python.org/ftp/python/2.7.2/Python-2.7.3.tar.bz2"
+python27_md5="c57477edd6d18bd9eeca2f21add73919" 
 python_mirror=$python27_mirror
 python_md5=$python27_md5
 
-openssl_mirror="http://www.openssl.org/source/openssl-1.0.0g.tar.gz"
-openssl_md5="07ecbe4324f140d157478637d6beccf1"
+openssl_mirror="http://www.openssl.org/source/openssl-1.0.1c.tar.gz"
+openssl_md5="ae412727c8c15b67880aef7bd2999b2e"
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
