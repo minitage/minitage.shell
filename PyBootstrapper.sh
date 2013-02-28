@@ -49,8 +49,8 @@ gentoo_mirror="$gentoo_mirror"
 
 gnu_mirror="http://ftp.gnu.org/pub/gnu"
 
-readline_mirror="http://distfiles.minitage.org/public/externals/minitage/readline-6.1.tar.gz"
-readline_md5="fc2f7e714fe792db1ce6ddc4c9fb4ef3"
+readline_mirror="$gentoo_mirror/distfiles/readline-6.2.tar.gz"
+readline_md5="67948acb2ca081f23359d0256e9a271c"
 
 bz2_mirror="$gentoo_mirror/distfiles/bzip2-1.0.6.tar.gz"
 bz2_md5="00b516f4704d4a7cb50a1d97e6e8e15b"
@@ -74,8 +74,8 @@ python27_md5="c57477edd6d18bd9eeca2f21add73919"
 python_mirror=$python27_mirror
 python_md5=$python27_md5
 
-openssl_mirror="http://www.openssl.org/source/openssl-1.0.1c.tar.gz"
-openssl_md5="ae412727c8c15b67880aef7bd2999b2e"
+openssl_mirror="http://www.openssl.org/source/openssl-1.0.1e.tar.gz"
+openssl_md5="66bf6f10f060d561929de96f9dfe5b8c"
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
@@ -287,13 +287,17 @@ compile_readline(){
     local myfullpath="readline.tgz"
     # check the download is good
     download "$readline_mirror" "$readline_md5" "$myfullpath"
-    download http://distfiles.minitage.org/public/externals/minitage/readline61-001 c642f2e84d820884b0bf9fd176bc6c3f readline61-001
-    download http://distfiles.minitage.org/public/externals/minitage/readline61-002 1a76781a1ea734e831588285db7ec9b1 readline61-002
+    download "$gentoo_mirror/distfiles/readline61-001" c642f2e84d820884b0bf9fd176bc6c3f readline62-001
+    download "$gentoo_mirror/distfiles/readline61-002" 6b0e18185a4c9327b41442d3853e3bb5 readline62-002
+    download "$gentoo_mirror/distfiles/readline61-003" cb2759a025a9641f3803101321125712 readline62-003
+    download "$gentoo_mirror/distfiles/readline61-004" 43316753a572489f11cf58efff1ec3c1 readline62-004
     mkdir_and_gointo "readline"
     tar xzvf "$download_dir/$myfullpath" -C .
     cd *
-    patch -Np0 < "$download_dir/readline61-001"
-    patch -Np0 < "$download_dir/readline61-002"
+    patch -Np0 < "$download_dir/readline62-001"
+    patch -Np0 < "$download_dir/readline62-002"
+    patch -Np0 < "$download_dir/readline62-003"
+    patch -Np0 < "$download_dir/readline62-004"
     export CFLAGS=" -I$prefix/include  -I$prefix/include/ncurses"
     export CPPFLAGS="$CFLAGS"
     export CXXFLAGS="$CFLAGS"
