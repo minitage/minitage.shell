@@ -175,9 +175,7 @@ archive() {
             eggs_dirs="$eggs_dirs $i"
         fi
     done
-    excl_regex="^([^\/])+/([^\/])+/(\$|bin|.*pyc|eggs"
-    excl_regex="${excl_regex}|a\/|[^\/]\.new"
-    excl_regex="${excl_regex}|b\/|[^\/]\.old"
+    excl_regex="^(([^/])+/([^/])+/)(\$|bin|.*pyc|eggs"
     excl_regex="${excl_regex}|develop-eggs|parts|sys"
     excl_regex="${excl_regex}|var|__min.*|\.minitage"
     excl_regex="${excl_regex}|\.downloads|\.installed.cfg"
