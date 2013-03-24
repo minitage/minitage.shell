@@ -172,7 +172,9 @@ archive() {
         | egrep "py-?.?-linux-x86_64" \
         | grep -v ".pyc" \
         >>"$f"
-    echo "$f">>"$f"
+    for $i in minilays $f;do
+        echo "$i">>"$f"
+    done
     local archivef="$w/minitageoffline-${CHRONO}.tbz2 "
     warn "Archivhing current minitage in $archivef?"
     warn "<C-C> to abort";read
