@@ -169,6 +169,12 @@ archive() {
             fi
         fi
     done
+    eggs_dirs=""
+    for i in $(ls -d eggs/*);do
+        if [[ $i != "eggs/cache"* ]];then
+            eggs_dirs="$eggs_dirs $i"
+        fi
+    done
     excl_regex="^([^\/])+/([^\/])+/(\$|bin|.*pyc|eggs"
     excl_regex="${excl_regex}|develop-eggs|parts|sys"
     excl_regex="${excl_regex}|var|__min.*|\.minitage"
@@ -178,26 +184,14 @@ archive() {
         dependencies/ \
         sources/ \
         $projects_dirs\
-        eggs/boost-python-1     \
-        eggs/pil-1.1.7          \
-        eggs/pycairo-1          \
-        eggs/py-libxml2-2.7     \
-        eggs/py-libxslt-1.1     \
-        eggs/pyqt-4             \
-        eggs/sip-4              \
+        $eggs_dirs\
         | egrep $excl_regex\
         >>"$ignoref"
     find \
         dependencies/ \
         sources/ \
         $projects_dirs\
-        eggs/boost-python-1     \
-        eggs/pil-1.1.7          \
-        eggs/pycairo-1          \
-        eggs/py-libxml2-2.7     \
-        eggs/py-libxslt-1.1     \
-        eggs/pyqt-4             \
-        eggs/sip-4              \
+        $eggs_dirs\
         | egrep -v $excl_regex \
         >>"$f"
     find downloads -type f >> "$f"
