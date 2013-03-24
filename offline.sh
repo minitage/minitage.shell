@@ -157,7 +157,9 @@ archive() {
     local CHRONO=$(date +"%Y-%m-%d-%H-%M-%S")
     cd $(dirname $0)
     f=CONTENT.txt
+    ignoref=IGNORE.txt
     echo > "$f"
+    echo > "$ignoref"
     projects_dirs=""
     for i in $(ls $w);do
         if [[ -d $i ]];then
@@ -177,17 +179,20 @@ archive() {
         eggs/py-libxslt-1.1     \
         eggs/pyqt-4             \
         eggs/sip-4              \
-        | egrep -v "^[^/]+/[^/]+/bin"    \
-        | egrep -v "^[^/]+/[^/]+/eggs"    \
-        | egrep -v "^[^/]+/[^/]+/develop-eggs"    \
-        | egrep -v "^[^/]+/[^/]+/parts"    \
-        | egrep -v "^[^/]+/[^/]+/sys"      \
-        | egrep -v "^[^/]+/[^/]+/var"      \
-        | egrep -v "^[^/]+/[^/]+/__min.*"      \
-        | egrep -v "^[^/]+/[^/]+/.minitage"\
-        | egrep -v "^[^/]+/[^/]+/.downloads"\
-        | egrep -v "^[^/]+/[^/]+/.installed.cfg"\
-        | grep -v ".pyc" \
+        | egrep    '^([^\/])+/([^\/])+/($|bin|.*pyc|eggs|develop-eggs|parts|sys|var|__min.*|\.minitage|\.downloads|\.installed.cfg)' \
+        >>"$ignoref"
+    find \
+        dependencies/ \
+        sources/ \
+        $projects_dirs\
+        eggs/boost-python-1     \
+        eggs/pil-1.1.7          \
+        eggs/pycairo-1          \
+        eggs/py-libxml2-2.7     \
+        eggs/py-libxslt-1.1     \
+        eggs/pyqt-4             \
+        eggs/sip-4              \
+        | egrep -v '^([^\/])+/([^\/])+/($|bin|.*pyc|eggs|develop-eggs|parts|sys|var|__min.*|\.minitage|\.downloads|\.installed.cfg)' \
         >>"$f"
     find downloads -type f >> "$f"
     find eggs/cache/ \
@@ -195,13 +200,13 @@ archive() {
         | egrep "py-?.?-linux-x86_64" \
         | grep -v ".pyc" \
         >>"$f"
-    for i in minilays $f;do
+    for i in minilays $f $ignoref;do
         echo "$i">>"$f"
     done
     local archivef="$w/minitageoffline-${CHRONO}.tbz2"
     warn "Archivhing current minitage in $archivef?"
     warn "<C-C> to abort";read
-    tar cjvf "$archivef" -T "$f"
+    tar cjvf "$archivef" -T "$f" -X "$ignoref"
     red "Produced $archivef"
 }
 safe_check() {
