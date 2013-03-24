@@ -181,13 +181,44 @@ safe_check() {
         read
     fi
 }
-install_plone_deps() {
+install_minitage_python() {
     . $w/bin/activate
     minimerge -ov python-2.7 python-2.6 python-2.4
     for i in python-2.7 python-2.6 python-2.4;do
         install_minitage_deps $w/dependencies/$i/parts/part
         install_minitage $w/dependencies/$i/parts/part 
     done
+}
+install_plone_deps() {
+    if [[ ! -e $w/zope/plone ]];then
+        mkdir -pv $w/zope/plone
+        mkdir -pv $w/minilays/plone
+        cp $w/eggs/pil-1.1.7/bootstrap.py $w/zope/plone
+cat > $w/minilays/plone/plone << EOF
+[minibuild]
+dependencies= libxml2-2.7 libxslt-1.1 py-libxml2-2.7 py-libxslt-1.1 pil-1.1.7 libiconv-1.12 python-2.7 git-1.7 subversion-1.7 openldap-2.4
+install_method=buildout
+src_uri=/dev/null
+src_type=git
+category=zope
+homepage=
+description=
+buildout_config=buildout.cfg
+EOF
+cat > $w/zope/plone/buildout.cfg << EOF
+[buildout]
+versions = versions
+parts = part
+hooks-directory = \${buildout:directory}/hooks
+develop-eggs-directory=../../eggs/develop-eggs
+eggs-directory=../../eggs/cache
+[versions]
+[part]
+recipe = plone.recipe.command
+update-command=\${part:command}
+command = echo installed
+EOF
+    fi
     minimerge -ov plone
 }
 deploy(){
@@ -197,7 +228,8 @@ deploy(){
     make install_minitage_deps
     make install_minitage
     safe_check
-    install_plone_deps
+    make install_minitage_python
+    make install_plone_deps
 }
 eggpush() {
     for i in $sync_eggs;do
