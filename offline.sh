@@ -71,10 +71,10 @@ blue() {
 }
 green() {
     echo "${GREEN}$@${NORMAL}"
-} 
+}
 red() {
     echo "${RED}$@${NORMAL}"
-}  
+}
 qpushd() {
     pushd "$1" 2>&1 >> /dev/null
 }
@@ -189,10 +189,16 @@ safe_check() {
 }
 install_minitage_python() {
     . $w/bin/activate
-    minimerge -ov python-2.7 python-2.6 python-2.4
-    for python in python-2.7 python-2.6 python-2.4;do
-        install_minitage_deps $w/dependencies/${python}/parts/part
-        install_minitage      $w/dependencies/${python}/parts/part 
+    local pys="python-2.7 python-2.6 python-2.4"
+    for python in $pys;do
+        minimerge -ov $python || warn "$python build failed, skipping"
+    done
+    for python in $pys;do
+        local pyprefix="$w/dependencies/${python}/parts/part"
+        if [[ -e $pyprefix ]];then
+            install_minitage_deps $pyprefix
+            install_minitage      $pyprefix
+        fi
     done
 }
 install_plone_deps() {
@@ -242,7 +248,7 @@ eggpush() {
         rsync -azv \
             $rexclude \
             $w/sources/$i/ \
-            $sync_path/$i/ 
+            $sync_path/$i/
     done
 }
 push() {
