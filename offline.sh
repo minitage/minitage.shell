@@ -168,6 +168,10 @@ archive() {
             fi
         fi
     done
+    excl_regex="^([^\/])+/([^\/])+/(\$|bin|.*pyc|eggs"
+    excl_regex="${excl_regex}|develop-eggs|parts|sys"
+    excl_regex="${excl_regex}|var|__min.*|\.minitage"
+    excl_regex="${excl_regex}|\.downloads|\.installed.cfg)"
     find \
         dependencies/ \
         sources/ \
@@ -179,7 +183,7 @@ archive() {
         eggs/py-libxslt-1.1     \
         eggs/pyqt-4             \
         eggs/sip-4              \
-        | egrep    '^([^\/])+/([^\/])+/($|bin|.*pyc|eggs|develop-eggs|parts|sys|var|__min.*|\.minitage|\.downloads|\.installed.cfg)' \
+        | egrep $excl_regex\
         >>"$ignoref"
     find \
         dependencies/ \
@@ -192,7 +196,7 @@ archive() {
         eggs/py-libxslt-1.1     \
         eggs/pyqt-4             \
         eggs/sip-4              \
-        | egrep -v '^([^\/])+/([^\/])+/($|bin|.*pyc|eggs|develop-eggs|parts|sys|var|__min.*|\.minitage|\.downloads|\.installed.cfg)' \
+        | egrep -v $excl_regex \
         >>"$f"
     find downloads -type f >> "$f"
     find eggs/cache/ \
