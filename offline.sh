@@ -172,7 +172,7 @@ archive() {
         | egrep "py-?.?-linux-x86_64" \
         | grep -v ".pyc" \
         >>"$f"
-    for $i in minilays $f;do
+    for i in minilays $f;do
         echo "$i">>"$f"
     done
     local archivef="$w/minitageoffline-${CHRONO}.tbz2 "
