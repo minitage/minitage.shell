@@ -425,7 +425,6 @@ installorupgrade_setuptools(){
     local extra_args=""
     if [[ -n $offline ]];then
         dbase="$download_dir"
-        ls $download_dir/../dist/distribute*z
         if [[ -e $dist ]];then
             dbase="$download_dir/../dist"
         fi
