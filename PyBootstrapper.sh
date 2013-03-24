@@ -57,8 +57,8 @@ bz2_md5="00b516f4704d4a7cb50a1d97e6e8e15b"
 bz2_darwinpatch="http://distfiles.minitage.org/public/externals/minitage/patch-Makefile-dylib.diff"
 bz2_darwinpatch_md5="7f42ae89030ebe7279c80c2119f4b29d"
 
-zlib_mirror="$gentoo_mirror/distfiles/zlib-1.2.3.tar.bz2"
-zlib_md5="dee233bf288ee795ac96a98cc2e369b6"
+zlib_mirror="$gentoo_mirror/distfiles/zlib-1.2.7.tar.gz"
+zlib_md5="60df6a37c56e7c1366cca812414f7b85"
 
 ncurses_mirror="$gnu_mirror/ncurses/ncurses-5.7.tar.gz"
 ncurses_md5="cce05daf61a64501ef6cd8da1f727ec6"
@@ -70,7 +70,7 @@ python25_md5="394a5f56a5ce811fb0f023197ec0833e"
 python26_mirror="http://python.org/ftp/python/2.6.6/Python-2.6.6.tar.bz2"
 python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
 python27_mirror="http://python.org/ftp/python/2.7.3/Python-2.7.3.tar.bz2"
-python27_md5="c57477edd6d18bd9eeca2f21add73919" 
+python27_md5="c57477edd6d18bd9eeca2f21add73919"
 python_mirror=$python27_mirror
 python_md5=$python27_md5
 
@@ -84,8 +84,8 @@ ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
 ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
 ez_md5=""
 
-virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.5.1.tar.gz"
-virtualenv_md5="3daa1f449d5d2ee03099484cecb1c2b7"
+virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.9.1.tar.gz"
+virtualenv_md5="07e09df0adfca0b2d487e39a4bf2270a"
 
 hg_mirror="http://hg.intevation.org/files/mercurial-1.0.tar.gz"
 hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
@@ -154,7 +154,9 @@ download(){
                 echo  "!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!! $myfile doesn't match the md5 "$md5" ($file_md5)"
             fi
         fi
-        echo "Downloaded $mydest"
+        if [[ -n "$offline" ]];then
+            echo "Downloaded $mydest"
+        fi
     fi
 }
 
@@ -179,6 +181,7 @@ usage(){
     echo "${YELLOW}   If you choose to build python2.4 instead of 2.6, add -2.4 to args. $NORMAL"
     echo "${YELLOW}   If you choose to build python2.5 instead of 2.6, add -2.5 to args. $NORMAL"
     echo "${YELLOW}   If you choose to build python2.6 instead of 2.6, add -2.6 to args. $NORMAL"
+    echo "${YELLOW}   DOWLOADS_DIR can be set to indicate a directory where to found archives for offline build$NORMAL"
 }
 
 # make a temporary directory and go inside
@@ -243,12 +246,12 @@ give_filename_from_url() {
 }
 
 compile_bz2() {
-    local myfullpath="bz2.tbz2"
     local bz2_cflags="-fpic -fPIC -Wall -Winline -O3  -I. -L. -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
     # check the download is good
-    download "$bz2_mirror" "$bz2_md5" "$myfullpath"
+    download "$bz2_mirror" "$bz2_md5"
+    local myfullpath=$(ls -1rt $download_dir/bzip*|head -n1)
     mkdir_and_gointo "bz2"
-    tar xzvf "$download_dir/$myfullpath" -C .
+    tar xzvf "$myfullpath" -C .
     cd *
     set_mac_target
     if [[ $UNAME == 'Darwin' ]];then
@@ -273,26 +276,26 @@ compile_bz2() {
     cp bzlib.h "$prefix/include" || die "shared include installation failed"
 }
 compile_zlib() {
-    local myfullpath="zlib.tbz2"
     # check the download is good
-    download "$zlib_mirror" "$zlib_md5" "$myfullpath"
+    download "$zlib_mirror" "$zlib_md5"
+    local myfullpath=$(ls -1rt $download_dir/zlib*|head -n1)
     mkdir_and_gointo "zlib"
-    tar xjvf "$download_dir/$myfullpath" -C .
+    tar xzvf "$myfullpath" -C .
     cd *
     cmmi  "$myname" --shared --prefix="$prefix" || die "cmmi failed for $myname"
     make test || die "zlib test failed"
 }
 
 compile_readline(){
-    local myfullpath="readline.tgz"
     # check the download is good
-    download "$readline_mirror" "$readline_md5" "$myfullpath"
-    download "$gentoo_mirror/distfiles/readline61-001" c642f2e84d820884b0bf9fd176bc6c3f readline62-001
-    download "$gentoo_mirror/distfiles/readline61-002" 6b0e18185a4c9327b41442d3853e3bb5 readline62-002
-    download "$gentoo_mirror/distfiles/readline61-003" cb2759a025a9641f3803101321125712 readline62-003
-    download "$gentoo_mirror/distfiles/readline61-004" 43316753a572489f11cf58efff1ec3c1 readline62-004
+    download "$readline_mirror" "$readline_md5"
+    download "$gentoo_mirror/distfiles/readline62-001" 83287d52a482f790dfb30ec0a8746669 readline62-001
+    download "$gentoo_mirror/distfiles/readline62-002" 0665020ea118e8434bd145fb71f452cc readline62-002
+    download "$gentoo_mirror/distfiles/readline62-003" c9d5d79718856e711667dede87cb7622 readline62-003
+    download "$gentoo_mirror/distfiles/readline62-004" c08e787f50579ce301075c523fa660a4 readline62-004
     mkdir_and_gointo "readline"
-    tar xzvf "$download_dir/$myfullpath" -C .
+    local myfullpath=$(ls -1rt $download_dir/readline*z|head -n1)
+    tar xzvf "$myfullpath" -C .
     cd *
     patch -Np0 < "$download_dir/readline62-001"
     patch -Np0 < "$download_dir/readline62-002"
@@ -316,12 +319,13 @@ compile_readline(){
 }
 
 compile_ncurses(){
-    local myfullpath="ncurses.tgz"
     myname=ncurses
     # check the download is good
-    download "$ncurses_mirror" "$ncurses_md5" "$myfullpath"
+    download "$ncurses_mirror" "$ncurses_md5"
     mkdir_and_gointo "$myname"
-    tar xzvf "$download_dir/$myfullpath" -C .
+    local myfullpath=$(ls -1rt $download_dir/ncurs*z|head -n1)
+    echo $myfullpath tamere
+    tar xzvf "$myfullpath" -C .
     cd *
     cmmi  "$myname" --enable-const --enable-colorfgbg --enable-echo\
     --with-shared --enable-rpath \
@@ -332,12 +336,13 @@ compile_ncurses(){
 
 compile_openssl(){
     local myfullpath="openssl.tgz" platform="" ldflags=""
-    # check the download is good
-    download "$openssl_mirror" "$openssl_md5" "$myfullpath"
-    mkdir_and_gointo "openssl"
-    tar xzvf "$download_dir/$myfullpath" -C .
     ldflags=" -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
     sconfigure="./config"
+    # check the download is good
+    download "$openssl_mirror" "$openssl_md5"
+    mkdir_and_gointo "openssl"
+    local myfullpath=$(ls -1rt $download_dir/openssl*z|head -n1)
+    tar xzvf "$myfullpath" -C .
     cd *
     if [[ $UNAME == 'FreeBSD' ]];then
         platform=""
@@ -346,13 +351,13 @@ compile_openssl(){
         ldflags="$ldflags  -mmacosx-version-min=10.5.0"
         if [[ $(uname -r|cut -c1-3  ) == "10." ]];then
             platform="darwin64-x86_64-cc"
-        fi 
+        fi
         sconfigure="./Configure"
     fi
     if [[ $UNAME == 'Darwin' ]];then
-        $sconfigure --prefix="$prefix" --openssldir=="$prefix/etc/ssl" shared no-fips "$platform" $ldflags
+        $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" shared no-fips "$platform" $ldflags
     else
-        $sconfigure --prefix="$prefix" --openssldir=="$prefix/etc/ssl" shared $ldflags no-fips  "$platform"
+        $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" shared $ldflags no-fips  "$platform"
     fi
     if [[ $UNAME == 'FreeBSD' ]];then
         gsed \
@@ -370,11 +375,11 @@ compile_openssl(){
 }
 
 compile_python(){
-    local myfullpath="python.tbz2"
     # check the download is good
-    download "$python_mirror" "$python_md5" "$myfullpath"
+    download "$python_mirror" "$python_md5"
     mkdir_and_gointo "python"
-    tar xjvf "$download_dir/$myfullpath" -C .
+    local myfullpath=$(ls -1rt $download_dir/Python*2|head -n1)
+    tar xjvf "$myfullpath" -C .
     cd *
     # XXX OSX hack
     CFLAGS="  -I$prefix/include -I$prefix/include/ncurses -I.    $([[ $UNAME == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0  -D__DARWIN_UNIX03 ')"
@@ -412,22 +417,34 @@ ez_offline() {
 }
 
 installorupgrade_setuptools(){
-    local myfullpath="ez.py"
+    local myfullpath="$(ls $download_dir/distribute_setup.py)"
+    local dist="$(ls $download_dir/../dist/distribute*z -1|head -n1)"
     # check the download is good
-    download "$ez_mirror" "$ez_md5" "$myfullpath"
+    download "$ez_mirror" "$ez_md5"
     qpushd $prefix
-    res=$("$python" "$download_dir/$myfullpath")
+    local extra_args=""
+    if [[ -n $offline ]];then
+        dbase="$download_dir"
+        ls $download_dir/../dist/distribute*z
+        if [[ -e $dist ]];then
+            dbase="$download_dir/../dist"
+        fi
+        echo $dbase
+        extra_args="--download-base file://$dbase/"
+    fi
+    echo "$python" $extra_args "$myfullpath"
+    res=$("$python" "$myfullpath" $extra_args)
     qpopd
     res=$(echo $res|$SED -re "s/.*(-U\s*distribute).*/reinstall/g")
     if [[ "$res" == "reinstall" ]];then
-       "$python" "$download_dir/$myfullpath" -U Distribute
+       "$python" "$myfullpath" -U Distribute
     fi
     download "$virtualenv_mirror" "$virtualenv_md5"
     if [[ $UNAME == CYGWIN* ]];then
         qpushd $prefix/tmp
         # openssl
         download http://distfiles.minitage.org/public/externals/minitage/patches/virtualenv.win.diff 6c3d9b5f103a380041991d9c0714a73b virtenv.diff
-        tar xzvf "$download_dir/virtualenv-1.1.tar.gz"
+        tar xzvf "$(ls -rt1 virtualenv-*tar.gz|head -n1)"
         cd virtualenv-1.1
         patch -p0<"$download_dir/virtenv.diff"
         "$python" setup.py install
@@ -435,7 +452,6 @@ installorupgrade_setuptools(){
         ez_offline "VirtualEnv"   || die "VirtualEnv installation failed"
     fi
 }
-
 compile() {
     local done="$prefix/.compiled$1"
     if [[ ! -f $done ]];then
@@ -461,6 +477,9 @@ main() {
     bootstrap
     installorupgrade_setuptools || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
+    if [[ -e "$prefix/=" ]];then
+        rm -rf -- "$prefix/="
+    fi
     echo "Installation is now finnished."
     echo "some cleaning is running in the background and may take a while."
     echo "While it's cleaning, the machine can be a bit slower."
@@ -468,14 +487,14 @@ main() {
 
 create_destination() {
     local cli_dir="$1"
-    if [[ -e "$cli_dir" ]];then
-        echo "Warning: Directory not empty"
-    fi
+    #if [[ -e "$cli_dir" ]];then
+    #    echo "Warning: Directory not empty"
+    #fi
     mkdir -p "$cli_dir" || die "Cannot create destination directory"
     # absolute path needed for safety
     qpushd "$cli_dir"
     prefix="$(pwd)"
-    download_dir="${prefix}/downloads"
+    download_dir="${DOWNLOADS_DIR:-${prefix}/downloads}"
     tmp_dir="${prefix}/tmp"
     python="$prefix/bin/python"
     for dir in "$tmp_dir" "$download_dir";do
@@ -512,14 +531,13 @@ for arg in $@;do
         echo "$YELLOW User choosed to Build python-2.6 !$NORMAL"
         sleep 2
         python_mirror="$python26_mirror"
-        python_md5="$python26_md5" 
+        python_md5="$python26_md5"
     elif [[ $arg == "-o" ]] || [[ $arg == "--offline" ]];then
         offline="y"
     else
         cli_dir="$arg"
     fi
 done
-
 # about to install
 if [[ -z "$cli_dir" ]] && [[ ! -n "$test_mode" ]];then
     usage
