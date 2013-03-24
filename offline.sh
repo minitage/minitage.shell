@@ -38,6 +38,7 @@ minitage_eggs="
 rexclude="
     --exclude=*tar.gz
     --exclude=.installed.cfg
+    --exclude=.mr.developer.cfg
     --exclude=*tgz
     --exclude=*tar.bz
     --exclude=*tar.bz2
