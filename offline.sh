@@ -168,6 +168,7 @@ archive() {
     done
     find \
         dependencies/ \
+        sources/ \
         $projects_dirs\
         eggs/boost-python-1     \
         eggs/pil-1.1.7          \
@@ -176,16 +177,16 @@ archive() {
         eggs/py-libxslt-1.1     \
         eggs/pyqt-4             \
         eggs/sip-4              \
-        | egrep -v "[^/]+/[^/]+/bin"    \
-        | egrep -v "[^/]+/[^/]+/eggs"    \
-        | egrep -v "[^/]+/[^/]+/develop-eggs"    \
-        | egrep -v "[^/]+/[^/]+/parts"    \
-        | egrep -v "[^/]+/[^/]+/sys"      \
-        | egrep -v "[^/]+/[^/]+/var"      \
-        | egrep -v "[^/]+/[^/]+/__min.*"      \
-        | egrep -v "[^/]+/[^/]+/.minitage"\
-        | egrep -v "[^/]+/[^/]+/.downloads"\
-        | egrep -v "[^/]+/[^/]+/.installed.cfg"\
+        | egrep -v "^[^/]+/[^/]+/bin"    \
+        | egrep -v "^[^/]+/[^/]+/eggs"    \
+        | egrep -v "^[^/]+/[^/]+/develop-eggs"    \
+        | egrep -v "^[^/]+/[^/]+/parts"    \
+        | egrep -v "^[^/]+/[^/]+/sys"      \
+        | egrep -v "^[^/]+/[^/]+/var"      \
+        | egrep -v "^[^/]+/[^/]+/__min.*"      \
+        | egrep -v "^[^/]+/[^/]+/.minitage"\
+        | egrep -v "^[^/]+/[^/]+/.downloads"\
+        | egrep -v "^[^/]+/[^/]+/.installed.cfg"\
         | grep -v ".pyc" \
         >>"$f"
     find downloads -type f >> "$f"
