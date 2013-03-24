@@ -171,7 +171,8 @@ archive() {
     excl_regex="^([^\/])+/([^\/])+/(\$|bin|.*pyc|eggs"
     excl_regex="${excl_regex}|develop-eggs|parts|sys"
     excl_regex="${excl_regex}|var|__min.*|\.minitage"
-    excl_regex="${excl_regex}|\.downloads|\.installed.cfg)"
+    excl_regex="${excl_regex}|\.downloads|\.installed.cfg"
+    excl_regex="${excl_regex}|\.mr\.developer.cfg)"
     find \
         dependencies/ \
         sources/ \
