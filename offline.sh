@@ -173,11 +173,11 @@ archive() {
         | grep -v ".pyc" \
         >>"$f"
     echo "$f">>"$f"
-    #echo "Archivhing? <C-C> to abort";read
-    #tar cjvf minitageoffline-${CHRONO}.tbz2 \
-    #    sources downloads \
-    #    sources downloads \
-    #    archive.sh deploy.sh .git
+    local archivef="$w/minitageoffline-${CHRONO}.tbz2 "
+    warn "Archivhing current minitage in $archivef?"
+    warn "<C-C> to abort";read
+    tar cjvf "$archivef" -T "$f"
+    red "Produced $archivef"
 }
 safe_check() {
      pypi=$(egrep "^127\.0\.0\.1.*pypi.python.org" /etc/hosts|wc -l)
