@@ -57,6 +57,20 @@ rexclude="
     --exclude=*pyc
     --exclude=*egg-info
 "
+minitage_base_dirs="
+bin 
+cpan 
+downloads 
+etc 
+include  
+logs      
+sources  
+dependencies  
+eggs       
+host  
+lib      
+minilays  
+tools"
 # pretty term colors
 GREEN=$'\e[32;01m'
 YELLOW=$'\e[33;01m'
@@ -144,9 +158,17 @@ archive() {
     cd $(dirname $0)
     f=CONTENT.txt
     echo > "$f"
+    projects_dirs=""
+    for i in $(ls $w);do
+        if [[ -d $i ]];then
+            if [[ "$minitage_base_dirs" != *"$i"* ]];then
+                projects_dirs="$projects_dirs $i"
+            fi
+        fi
+    done
     find \
         dependencies/ \
-        zope/\
+        $projects_dirs\
         eggs/boost-python-1     \
         eggs/pil-1.1.7          \
         eggs/pycairo-1          \
@@ -175,7 +197,7 @@ archive() {
     for i in minilays $f;do
         echo "$i">>"$f"
     done
-    local archivef="$w/minitageoffline-${CHRONO}.tbz2 "
+    local archivef="$w/minitageoffline-${CHRONO}.tbz2"
     warn "Archivhing current minitage in $archivef?"
     warn "<C-C> to abort";read
     tar cjvf "$archivef" -T "$f"
