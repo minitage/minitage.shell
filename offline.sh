@@ -176,16 +176,16 @@ archive() {
         eggs/py-libxslt-1.1     \
         eggs/pyqt-4             \
         eggs/sip-4              \
-        | egrep -v "dependencies/[^/]+/bin"    \
-        | egrep -v "dependencies/[^/]+/eggs"    \
-        | egrep -v "dependencies/[^/]+/develop-eggs"    \
-        | egrep -v "dependencies/[^/]+/parts"    \
-        | egrep -v "dependencies/[^/]+/sys"      \
-        | egrep -v "dependencies/[^/]+/var"      \
-        | egrep -v "dependencies/[^/]+/__min.*"      \
-        | egrep -v "dependencies/[^/]+/.minitage"\
-        | egrep -v "dependencies/[^/]+/.downloads"\
-        | egrep -v "dependencies/[^/]+/.installed.cfg"\
+        | egrep -v "[^/]+/[^/]+/bin"    \
+        | egrep -v "[^/]+/[^/]+/eggs"    \
+        | egrep -v "[^/]+/[^/]+/develop-eggs"    \
+        | egrep -v "[^/]+/[^/]+/parts"    \
+        | egrep -v "[^/]+/[^/]+/sys"      \
+        | egrep -v "[^/]+/[^/]+/var"      \
+        | egrep -v "[^/]+/[^/]+/__min.*"      \
+        | egrep -v "[^/]+/[^/]+/.minitage"\
+        | egrep -v "[^/]+/[^/]+/.downloads"\
+        | egrep -v "[^/]+/[^/]+/.installed.cfg"\
         | grep -v ".pyc" \
         >>"$f"
     find downloads -type f >> "$f"
