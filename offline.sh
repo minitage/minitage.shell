@@ -69,6 +69,12 @@ warn() {
 blue() {
     echo "${BLUE}$@${NORMAL}"
 }
+green() {
+    echo "${GREEN}$@${NORMAL}"
+} 
+red() {
+    echo "${RED}$@${NORMAL}"
+}  
 qpushd() {
     pushd "$1" 2>&1 >> /dev/null
 }
@@ -275,9 +281,46 @@ do_mount(){
     [[ ! -d host ]] && mkdir host
     sshfs host:/ host
 }
+usage() {
+warn "          MINITAGE OFFLINE HELPER"
+blue "$script_usage"
+echo
+red "To make a minitage installation usable in offline mode"
+red "You need to setup things like that:"
+green "     cd minitage_root"
+green "     mkdir -pv sources"
+green "     cd sources"
+green "     for i in $(echo $minitage_eggs minitage.shell);do"
+green "         git clone git@github.com:minitage/\$i"
+green "     done"
+green "     cd .."
+green "     ln -s sources/minitage.shell/offline.sh"
+echo
+red "To prepare an offline minitage installation, "
+red "Deploy on a special minitage to snapshot the install"
+red "Then install your project minilay & run the minimerge dance"
+green "     ./offline deploy # install an offlinizable-minitage in the current directory"
+green "     cd minitage/minilays"
+green "     git clone minilay"
+green "     bin/minimerge <project>"
+red "This produce an archive in the current directory:"
+green "     <minitageoffline-CHRONO.tar.gz> # (called later as archive.tgz)"
+echo
+red "ReDeploy a snapshop with:"
+green "     tar xzvf archive.tgz"
+green "     ./offline deploy"
+green "     bin/minimerge <project>"
+echo
+warn "eggpush && mount && sync & push targets are to sync code between"
+warn "my (kiorky) test virtual machine & host, "
+warn "read it to see if it is useful in your case"
+
+}
+script_usage="$0 deploy|archive|eggpush|mount|sync|push"
 case $1 in
     mount) do_$1 ;;
     eggpush|push|deploy|archive|sync) $1 ;;
-    *) echo "$a mount|eggpush|deploy|archive|sync|push";;
+    help|--help|-h|usage) usage ;;
+    *) echo $script_usage ;;
 esac
 # vim:set et sts=4 ts=4 tw=80:
