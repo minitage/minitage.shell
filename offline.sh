@@ -101,17 +101,11 @@ install_pyboostrap() {
 virtualenv() {
     $PYPATH/bin/virtualenv --distribute --no-site-packages $w
 }
-install_minitage_deps() {
-    pyprefix="${1:-$w}"
-    for i in $MINITAGE_DEPS;do
-        ez_offline $i $pyprefix || die "cant install egg: $i"
-    done
-}
 install_minitage() {
-    local py="${1:-$w}"
+    local py="${1:-"${w}"}"
     for i in $minitage_eggs;do
         pushd $w/sources/$i
-            $pyprefix/bin/python setup.py develop
+            $py/bin/python setup.py develop
         popd
     done
 }
@@ -124,6 +118,12 @@ ez_offline() {
     fl="$fl ${w}/downloads/minitage/eggs"
     ez="$(ls $pyprefix/bin/easy_install*|tail -n1)"
     "$ez" -H None -f "$fl" "$egg" || die "easy install failed for egg"
+}
+install_minitage_deps() {
+    pyprefix="${1:-$w}"
+    for i in $MINITAGE_DEPS;do
+        ez_offline $i $pyprefix || die "cant install egg: $i"
+    done
 }
 make() {
     local done="$w/.compiled$1"
@@ -166,7 +166,7 @@ archive() {
         | egrep "py-?.?-linux-x86_64" \
         | grep -v ".pyc" \
         >>"$f"
-    git commit -am "savepoint"
+    echo "$f">>"$f"
     #echo "Archivhing? <C-C> to abort";read
     #tar cjvf minitageoffline-${CHRONO}.tbz2 \
     #    sources downloads \
@@ -184,9 +184,9 @@ safe_check() {
 install_minitage_python() {
     . $w/bin/activate
     minimerge -ov python-2.7 python-2.6 python-2.4
-    for i in python-2.7 python-2.6 python-2.4;do
-        install_minitage_deps $w/dependencies/$i/parts/part
-        install_minitage $w/dependencies/$i/parts/part 
+    for python in python-2.7 python-2.6 python-2.4;do
+        install_minitage_deps $w/dependencies/${python}/parts/part
+        install_minitage      $w/dependencies/${python}/parts/part 
     done
 }
 install_plone_deps() {
@@ -268,8 +268,16 @@ sync() {
     done
     install_minitage
 }
+do_mount(){
+    cd $(dirname $0)
+    echo "enter root password"
+    su -c "route del default"
+    [[ ! -d host ]] && mkdir host
+    sshfs host:/ host
+}
 case $1 in
+    mount) do_$1 ;;
     eggpush|push|deploy|archive|sync) $1 ;;
-    *) echo "$0 eggpush|deploy|archive|sync|push";;
+    *) echo "$a mount|eggpush|deploy|archive|sync|push";;
 esac
 # vim:set et sts=4 ts=4 tw=80:
