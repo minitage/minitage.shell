@@ -319,8 +319,9 @@ do_mount(){
     sshfs host:/ host
 }
 usage() {
+    echo "          -----------------------"
     warn "          MINITAGE OFFLINE HELPER"
-    echo
+    echo "          -----------------------"
     blue "$script_usage"
     echo
     red "To make a minitage installation usable in offline mode"
@@ -345,7 +346,7 @@ usage() {
     red "This produce an archive in the current directory:"
     green "     <minitageoffline-CHRONO.tar.gz> # (called later as archive.tgz)"
     echo
-    red "ReDeploy a snapshop with:"
+    red "ReDeploy a snapshot with:"
     warn "WARNING: it touches ~/.buildout/default.cfg to set the local download cache"
     green "     tar xzvf archive.tgz"
     green "     ./offline deploy"
