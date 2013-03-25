@@ -339,22 +339,22 @@ usage() {
     red "Deploy on a special minitage to snapshot the install"
     red "Then install your project minilay & run the minimerge dance"
     warn "WARNING: it touches ~/.buildout/default.cfg to set the local download cache"
-    green "     ./offline deploy # install an offlinizable-minitage in the current directory"
+    green "     ./offline deploy $(blue "# install an offlinizable-minitage in the current directory")"
     green "     cd minitage/minilays"
     green "     git clone minilay"
     green "     bin/minimerge <project>"
-    red "This produce an archive in the current directory:"
-    green "     <minitageoffline-CHRONO.tar.gz> # (called later as archive.tgz)"
+    green "     ./offline archive"
+    red "This produce an archive in the current directory:" $(blue "<minitageoffline-CHRONO.tar.gz>")
     echo
     red "ReDeploy a snapshot with:"
     warn "WARNING: it touches ~/.buildout/default.cfg to set the local download cache"
-    green "     tar xzvf archive.tgz"
-    green "     ./offline deploy"
-    green "     bin/minimerge <project>"
+    green "     tar xzvf <minitageoffline-CHRONO.tar.gz>"
+    green "     ./offline deploy $(blue "# install an offlinizable-minitage in the current directory")"
+    green "     bin/minimerge -ov <project> $(blue "# -o for offline")"
     echo
-    warn "eggpush && mount && sync & push targets are to sync code between"
-    warn "my (kiorky) test virtual machine & host, "
-    warn "read it to see if it is useful in your case"
+    red "eggpush && mount && sync & push targets are to sync code between"
+    red "my (kiorky) test virtual machine & host, "
+    red "read it to see if it is useful in your case"
 }
 script_usage="$0 deploy|archive|eggpush|mount|sync|push"
 case $1 in
