@@ -290,6 +290,14 @@ sync() {
             mkdir $w/$i
         fi
     done
+    for i in $sync_eggs;do
+        rsync -azv \
+            --delete \
+            --include='*/*/bin' \
+            $rexclude \
+            $sync_path/$i/ \
+            $w/sources/$i/
+    done
     #rsync -azv $rexclude --delete --delete-excluded \
     rsync -azv $rexclude \
         --exclude=cache \
@@ -300,13 +308,6 @@ sync() {
         $sync_minpath/dependencies/ $w/dependencies/
     for i in eggs dependencies;do
         rsync -azv ${sync_minpath}/minilays/$i/ $w/minilays/$i/
-    done
-    for i in $sync_eggs;do
-        rsync -azv \
-            --delete \
-            $rexclude \
-            $sync_path/$i/ \
-            $w/sources/$i/
     done
     install_minitage
 }
