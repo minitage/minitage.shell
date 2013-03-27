@@ -427,11 +427,9 @@ installorupgrade_setuptools(){
         dbase="$download_dir"
         if [[ -e $dist ]];then
             dbase="$download_dir/../dist"
+            extra_args="--download-base file://$dbase/"
         fi
-        echo $dbase
-        extra_args="--download-base file://$dbase/"
     fi
-    echo "$python" $extra_args "$myfullpath"
     res=$("$python" "$myfullpath" $extra_args)
     qpopd
     res=$(echo $res|$SED -re "s/.*(-U\s*distribute).*/reinstall/g")
@@ -439,17 +437,7 @@ installorupgrade_setuptools(){
        "$python" "$myfullpath" -U Distribute
     fi
     download "$virtualenv_mirror" "$virtualenv_md5"
-    if [[ $UNAME == CYGWIN* ]];then
-        qpushd $prefix/tmp
-        # openssl
-        download http://distfiles.minitage.org/public/externals/minitage/patches/virtualenv.win.diff 6c3d9b5f103a380041991d9c0714a73b virtenv.diff
-        tar xzvf "$(ls -rt1 virtualenv-*tar.gz|head -n1)"
-        cd virtualenv-1.1
-        patch -p0<"$download_dir/virtenv.diff"
-        "$python" setup.py install
-    else
-        ez_offline "VirtualEnv"   || die "VirtualEnv installation failed"
-    fi
+    ez_offline "VirtualEnv"   || die "VirtualEnv installation failed"
 }
 compile() {
     local done="$prefix/.compiled$1"

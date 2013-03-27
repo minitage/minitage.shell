@@ -9,8 +9,8 @@ sync_minpath=${BASE_EGGS:-"${w}/host/home/kiorky/minitage"}
 
 PYPATH=$w/tools/python
 PYB="$w/sources/minitage.shell/PyBootstrapper.sh"
-ONLINE=""
-DO_SYNC=""
+ONLINE="${ONLINE:-""}"
+DO_SYNC="$DO_SYNC:-""}"
 MINITAGE_DEPS="
     iniparse
     ordereddict
@@ -118,14 +118,14 @@ qpushd() {
 qpopd() {
     popd    2>&1 >> /dev/null
 }
-
 minimerge_wrapper() {
-    local args="-o -v"
-    if [[ -n $ONLINE ]];then
-        args=""
+    local args="-v"
+    if [[ -z $ONLINE ]];then
+        args="$args -o"
     fi
-    echo "minimerge $args"
-
+    . $w/bin/activate
+    minimerge $args $@
+    deactivate
 }
 configure_buildout() {
     if [[ ! -e ~/.buildout ]];then
@@ -148,8 +148,14 @@ EOF
     fi
 }
 install_pyboostrap() {
-
-    DOWNLOADS_DIR=$DOWNLOADS_DIR/minitage $PYB $PYPATH
+    local args=""
+    if [[ -z $ONLINE ]];then
+        args="$args -o"
+    fi 
+    if [[ ! -d ${DOWNLOADS_DIR} ]];then
+        mkdir -p ${DOWNLOADS_DIR}
+    fi
+    DOWNLOADS_DIR=$DOWNLOADS_DIR/minitage $PYB $args $PYPATH
 }
 virtualenv() {
     $PYPATH/bin/virtualenv --distribute --no-site-packages $w
@@ -196,9 +202,9 @@ ez_offline() {
     local egg="$1" pyprefix="${2:-$w}" ez=""
     ez="$(ls $pyprefix/bin/easy_install*|tail -n1)"
     if [[ -n $ONLINE ]];then
-        "$ez" -f "$fl" "$egg" || die "easy install failed for egg"
+        "$ez" -f "$fl" "$egg" || die "easy install(online) failed for egg"
     else
-        "$ez" -H None -f "$fl" "$egg" || die "easy install failed for egg"
+        "$ez" -H None -f "$fl" "$egg" || die "easy install (offline) failed for egg"
     fi
 }
 install_in_cache() {
@@ -296,11 +302,13 @@ archive() {
     red "Produced $archivef $archived"
 }
 safe_check() {
-     pypi=$(egrep "^127\.0\.0\.1.*pypi.python.org" /etc/hosts|wc -l)
+    local pypi=$(egrep "^127\.0\.0\.1.*pypi.python.org" /etc/hosts|wc -l)
     if [[ "$pypi" == "0" ]];then
-        warn "Did you forget to add to /etc/hosts (<C-C> to abort, <enter to continue> :"
-        blue "127.0.0.1 pypi.python.org"
-        read
+        if [[ -z ${ONLINE} ]];then
+            warn "Did you forget to add to /etc/hosts (<C-C> to abort, <enter to continue> :"
+            blue "127.0.0.1 pypi.python.org"
+            read
+        fi
     fi
 }
 install_plone_deps() {
@@ -335,11 +343,13 @@ EOF
     fi
     minimerge_wrapper plone
 }
-
 install_project(){
-    . $W/bin/activate
     minimerge_wrapper -NE $1
     minimerge_wrapper     $i
+}
+fetch_initial_deps() {
+    minimerge_wrapper -s
+    minimerge_wrapper --fetchonly --only-dependencies all
 }
 deploy(){
     configure_buildout
@@ -348,9 +358,10 @@ deploy(){
     make install_minitage_deps
     make install_minitage
     safe_check
-    if [[ -n ${DO_SYNC} ]];then
-        minimerge_wrapper -s
-        minimerge_wrapper --fetchonly --only-dependencies all
+    if [[ -n ${ONLINE} ]];then
+        if [[ -n ${DO_SYNC} ]];then
+            make fetch_initial_deps
+        fi
     fi
     make install_minitage_python
     make install_plone_deps
@@ -405,16 +416,18 @@ do_mount(){
     sshfs host:/ host
 }
 checkout_or_update() {
-    if [[ ! -d sources ]];then
-        mkdir -pv sources
-    fi
+    for d in sources eggs/cache;do
+        if [[ ! -d $d ]];then
+            mkdir -pv $d
+        fi
+    done
     qpushd sources
     for i in $(echo $minitage_eggs minitage.shell);do
         if [[ ! -d $i ]];then
             git clone git@github.com:minitage/$i
         fi
         qpushd $i
-        git pull || die "problem updating $i"
+        # git pull || die "problem updating $i"
         qpopd
     done
     qpopd
@@ -423,7 +436,7 @@ checkout_or_update() {
 }
 bootstrap() {
     checkout_or_update
-    ONLINE=TRUE DO_SYNC=TRUE ./offline.sh deploy
+    ONLINE="TRUE" DO_SYNC="TRUE" ./offline.sh deploy
 }
 usage() {
     echo "        ---------------------------"
@@ -442,7 +455,7 @@ usage() {
     green "  chmod +x offline.sh"
     echo
     red "Installing the base minitage dependencies $(warn "-> NEED TO HAVE INTERNET & GIT")"
-    green "  ./offline.sh bootstrap"
+    green "  ./offline.sh bootstrap $(blue "# take a cofee...")"
     echo
     red "Installing your a project and then making a snapshot $(warn "-> NEED TO HAVE INTERNET")"
     green "  cd minitage/minilays && git clone minilay"
