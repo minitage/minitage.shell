@@ -18,6 +18,7 @@ ARCHIVES_PATH="${ARCHIVES_PATH:-"$w/snapshots"}"
 COMMAND_ARGS=$@
 sync_path=${BASE_EGGS:-"${w}/host/home/kiorky/projects/repos/hg.minitage.org/eggs/"}
 GIT_URL="git@github.com:minitage"
+HTTP_URL="http://github.com/minitage"
 sync_minpath=${BASE_EGGS:-"${w}/host/home/kiorky/minitage"}
 PYPATH=$w/tools/python
 PYB="$w/sources/minitage.shell/PyBootstrapper.sh"
@@ -517,7 +518,7 @@ checkout_or_update() {
     qpushd sources
     for i in $(echo $minitage_eggs minitage.shell);do
         if [[ ! -d $i ]];then
-            git clone "${GIT_URL}/$i"
+            git clone "${GIT_URL}/$i" || git clone "${HTTP_URL}/$i"  
         fi
         qpushd "$i"
         git pull || die "problem updating $i"
