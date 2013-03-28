@@ -168,7 +168,7 @@ install_pyboostrap() {
     if [[ ! -d "${DOWNLOADS_DIR}" ]];then
         mkdir -p "${DOWNLOADS_DIR}"
     fi
-    DOWNLOADS_DIR="$DOWNLOADS_DIR/minitage" "$PYB" $args "$PYPATH"
+    DOWNLOADS_DIR="$DOWNLOADS_DIR/minitage" "$PYB" $args "$PYPATH" || die "pybootstrapper failed  !"
 }
 virtualenv() {
     rm -rf "$w/bin" "$w/include"  "$w/lib"
@@ -216,7 +216,7 @@ install_minitage_python() {
     #done
 }
 die() {
-    echo $@;exit -1
+    red $@;exit -1
 }
 ez_offline() {
     local egg="$1" pyprefix="${2:-$w}" ez=""

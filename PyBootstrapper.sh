@@ -149,9 +149,11 @@ download(){
             $wget "$mydest" "$url"
             file_md5="$($MD5SUM $mydest|awk '{print $1}')"
         fi
-        if [[ "$md5" != "$file_md5" ]];then
-            if [[ -n "$md5" ]];then
-                echo  "!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!! $myfile doesn't match the md5 "$md5" ($file_md5)"
+        if [[ "$md5" != "NOCHECK" ]];then
+            if [[ "$md5" != "$file_md5" ]];then
+                if [[ -n "$md5" ]];then
+                    echo  "!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!! $myfile doesn't match the md5 "$md5" ($file_md5)"
+                fi
             fi
         fi
         if [[ -n "$offline" ]];then
@@ -417,9 +419,9 @@ ez_offline() {
 }
 
 installorupgrade_setuptools(){
-    local myfullpath="$(ls "$download_dir/distribute_setup.py")"
+    local myfullpath="distribute_setup.py"
     # check the download is good
-    download "$ez_mirror" "$ez_md5"
+    download "$ez_mirror" NOCHECK "$myfullpath"
     local dist="$(find "$download_dir" "$download_dir/../dist" -iname distribute*z |head -n1)"
     qpushd $prefix
     local extra_args=""
