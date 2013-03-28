@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 WHERE="$1"
-if [[ -z $WHERE ]];then
-        WHERE="$PWD"
-fi
+cd $WHERE
+WHERE="$PWD"
 PACKAGE="$(basename $WHERE)"
 BASE_URL="https://kiorky@github.com/minitage-dependencies"
 BASE_URL="git@github.com:minitage-dependencies"
 EGGS_URL="https://kiorky@github.com/minitage-eggs"
 EGGS_URL="git@github.com:minitage-eggs"
 MINILAYS_URL="https://kiorky@github.com/minitage/minilays.2.0."
+MINILAYS_URL="git@github.com:minitage/minilays.2.0."
 URL="$BASE_URL/$PACKAGE"
 if [[ $(echo $WHERE|sed -re "s/.*minilays.*/go/g") == "go" ]];then
     URL="$MINILAYS_URL$PACKAGE"
