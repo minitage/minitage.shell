@@ -124,7 +124,7 @@ minimerge_wrapper() {
         args="$args -o"
     fi
     . $w/bin/activate
-    minimerge $args $@
+    minimerge $args $@ || die "minimerge $args $@ failed"
     deactivate
 }
 configure_buildout() {
@@ -161,6 +161,10 @@ virtualenv() {
     $PYPATH/bin/virtualenv --distribute --no-site-packages $w
 }
 refresh() {
+    DO_SYNC=$COMMAND_ARGS
+    if [[ -n ${DO_SYNC} ]];then
+        checkout_or_update
+    fi
     install_minitage_deps
     install_minitage
     install_minitage_python
@@ -171,6 +175,16 @@ install_minitage() {
         pushd $w/sources/$i
             $py/bin/python setup.py develop
         popd
+    done
+    to_cache $w
+}
+to_cache() {
+    install_in_cache "zc.buildout<2dev" $1
+    install_in_cache "zc.buildout>2dev" $1
+    for i in $minitage_eggs;do
+        qpushd $w/sources/$i
+        install_in_cache . $1
+        qpopd
     done
 }
 install_minitage_python() {
@@ -185,13 +199,7 @@ install_minitage_python() {
     for python in $pys;do
         local pyprefix="$w/dependencies/${python}/parts/part"
         if [[ -e $pyprefix ]];then
-            install_in_cache "zc.buildout<2dev" $pyprefix
-            install_in_cache "zc.buildout>2dev" $pyprefix
-            for i in $minitage_eggs;do
-                qpushd $w/sources/$i
-                install_in_cache . $pyprefix
-                qpopd
-            done
+            to_cache $pyprefix
         fi
     done
 }
@@ -219,9 +227,9 @@ install_in_cache() {
     fi
     red "Installing $egg"
     if [[ -n $ONLINE ]];then
-        "$ez" -qmxd $w/eggs/cache -H None -f "$fl" "$egg" || die "easy install in cache failed for egg: $egg"
+        "$ez" -qmxd $w/eggs/cache -f "$fl" "$egg" || die "easy install in cache (online) failed for egg: $egg"
     else
-        "$ez" -qmxd $w/eggs/cache -f "$fl" "$egg" || die "easy install in cache failed for egg: $egg"
+        "$ez" -qmxd $w/eggs/cache -H None -f "$fl" "$egg" || die "easy install in cache failed for egg: $egg"
     fi
 }
 install_minitage_deps() {
@@ -268,8 +276,9 @@ archive() {
     excl_regex="${excl_regex}|develop-eggs|parts|sys"
     excl_regex="${excl_regex}|var|__min.*|\.minitage"
     excl_regex="${excl_regex}|\.downloads|\.installed.cfg"
-    excl_regex="${excl_regex}|\.mr\.developer.cfg)"
-    excl_regex="${excl_regex}|var)"
+    excl_regex="${excl_regex}|\.mr\.developer.cfg"
+    excl_regex="${excl_regex}|var"
+    excl_regex="${excl_regex})"
     find \
         dependencies/ \
         sources/ \
@@ -297,8 +306,8 @@ archive() {
     local archived="$w/archives/minitageoffline-${CHRONO}-downloads.tbz2"
     warn "Archivhing current minitage in $archivef $archived?"
     warn "<C-C> to abort";read
-    tar cjvf "$archivef" -T "$f" -X "$ignoref"
-    tar cjvf "$archived" -T "$download" -X "$ignoref"
+    echo tar cjvf "$archivef" -T "$f" -X "$ignoref"
+    echo tar cjvf "$archived" -T "$download" -X "$ignoref"
     red "Produced $archivef $archived"
 }
 safe_check() {
@@ -427,7 +436,7 @@ checkout_or_update() {
             git clone git@github.com:minitage/$i
         fi
         qpushd $i
-        # git pull || die "problem updating $i"
+        git pull || die "problem updating $i"
         qpopd
     done
     qpopd
