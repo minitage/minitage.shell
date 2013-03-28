@@ -151,7 +151,7 @@ install_pyboostrap() {
     local args=""
     if [[ -z $ONLINE ]];then
         args="$args -o"
-    fi 
+    fi
     if [[ ! -d ${DOWNLOADS_DIR} ]];then
         mkdir -p ${DOWNLOADS_DIR}
     fi
@@ -181,9 +181,12 @@ install_minitage() {
 to_cache() {
     install_in_cache "zc.buildout<2dev" $1
     install_in_cache "zc.buildout>2dev" $1
+    rm -rvf "$w/eggs/cache/"*minitage* \
+        "$DOWNLOADS_DIR/dist/"*minitage* \
+        "$DOWNLOADS_DIR/minitage/eggs/"*minitage*
     for i in $minitage_eggs;do
         qpushd $w/sources/$i
-        install_in_cache . $1
+        develop_only . $1
         qpopd
     done
 }
@@ -193,15 +196,12 @@ install_minitage_python() {
     for python in $pys;do
         minimerge_wrapper $python || warn "$python build failed, skipping"
     done
-    rm -rvf "$w/eggs/cache/"*minitage* \
-        "$DOWNLOADS_DIR/dist/"*minitage* \
-        "$DOWNLOADS_DIR/minitage/eggs/"*minitage*
-    for python in $pys;do
-        local pyprefix="$w/dependencies/${python}/parts/part"
-        if [[ -e $pyprefix ]];then
-            to_cache $pyprefix
-        fi
-    done
+    #for python in $pys;do
+    #    local pyprefix="$w/dependencies/${python}/parts/part"
+    #    if [[ -e $pyprefix ]];then
+    #        to_cache $pyprefix
+    #    fi
+    #done
 }
 die() {
     echo $@;exit -1
@@ -214,6 +214,22 @@ ez_offline() {
     else
         "$ez" -H None -f "$fl" "$egg" || die "easy install (offline) failed for egg"
     fi
+}
+develop_only() {
+    local eggdir="$1" pyprefix="${2:-$w}" py="" online="$ONLINE"
+    py="$(ls $pyprefix/bin/python|tail -n1)"
+    red "Installing $egg"
+    qpushd $eggdir
+    eggdir="$PWD"
+    $py setup.py develop -qNH None -f "$fl" || die "develop_only failed for egg: $eggdir"
+    local tmp="$PWD/tmp"
+    rm -rf "$tmp"
+    mkdir "$tmp"
+    PYTHONPATH="$tmp" "$py" setup.py develop -qxN -d "$tmp" -S "$tmp"
+    rm -rf tmp/eas* tmp/*py tmp/*py{c,o}
+    cp -vf tmp/*  $w/eggs/cache
+    rm -rf "$tmp"
+    qpopd
 }
 install_in_cache() {
     local egg="$1" pyprefix="${2:-$w}" ez="" py="" online="$ONLINE"
@@ -252,13 +268,16 @@ make() {
 archive() {
     local CHRONO=$(date +"%Y-%m-%d-%H-%M-%S")
     cd $(dirname $0)
-    f=BASE.txt
-    download=DOWNLOAD.txt
-    db=DB.txt
-    ignoref=IGNORE.txt
+    local f=BASE.txt
+    local download=DOWNLOAD.txt
+    local projects=PROJECTS.txt
+    local db=DB.txt
+    local ignoref=IGNORE.txt
     echo > "$f"
     echo > "$ignoref"
-    projects_dirs=""
+    echo > "$download"
+    echo > "$projects"
+    local projects_dirs=""
     for i in $(ls $w);do
         if [[ -d $i ]];then
             if [[ "$minitage_base_dirs" != *"$i"* ]];then
@@ -266,13 +285,13 @@ archive() {
             fi
         fi
     done
-    eggs_dirs=""
+    local eggs_dirs=""
     for i in $(ls -d eggs/*);do
         if [[ $i != "eggs/cache"* ]];then
             eggs_dirs="$eggs_dirs $i"
         fi
     done
-    excl_regex="^(([^/])+/([^/])+/)(\$|bin|.*pyc|eggs"
+    local excl_regex="^(([^/])+/([^/])+/)(\$|bin|.*pyc|eggs"
     excl_regex="${excl_regex}|develop-eggs|parts|sys"
     excl_regex="${excl_regex}|var|__min.*|\.minitage"
     excl_regex="${excl_regex}|\.downloads|\.installed.cfg"
@@ -286,28 +305,38 @@ archive() {
         $eggs_dirs\
         | egrep $excl_regex\
         >>"$ignoref"
+    find eggs/cache\
+        | grep  "linux-x86_64.egg" \
+        >>"$ignoref"
     find \
         dependencies/ \
         sources/ \
-        $projects_dirs\
+        minilays/{dependencies,eggs,plone}\
         $eggs_dirs\
         | egrep -v $excl_regex \
         >>"$f"
+    find $projects_dirs minilays\
+        $projects $ignoref\
+        |egrep -v $excl_regex \
+        |egrep -v "minilays/(dependencies|eggs|plone)">>"$projects"
     find $DOWNLOADS_DIR -type f >> "${download}"
     find eggs/cache/ $download \
-        | egrep "py-?.?\.egg" \
-        | egrep "py-?.?-linux-x86_64" \
-        | grep -v ".pyc" \
+        | egrep -v "\.pyc" \
+        | egrep -v "\.pyo" \
+        | grep -v "linux-x86_64.egg" \
         >>"${download}"
-    for i in minilays $f $db $ignoref;do
+    for i in minilays "$f" "$ignoref";do
         echo "$i">>"$f"
     done
-    local archivef="$w/archives/minitageoffline-${CHRONO}-base.tbz2"
-    local archived="$w/archives/minitageoffline-${CHRONO}-downloads.tbz2"
+    ARCHIVES_PATH="${ARCHIVES_PATH:-"$w/archives"}"
+    local archivef="${ARCHIVES_PATH}/minitageoffline-${CHRONO}-base.tbz2"
+    local archived="${ARCHIVES_PATH}/minitageoffline-${CHRONO}-downloads.tbz2"
+    local archivep="${ARCHIVES_PATH}/minitageoffline-${CHRONO}-projects.tbz2"
     warn "Archivhing current minitage in $archivef $archived?"
     warn "<C-C> to abort";read
     echo tar cjvf "$archivef" -T "$f" -X "$ignoref"
     echo tar cjvf "$archived" -T "$download" -X "$ignoref"
+    echo tar cjvf "$archivep" -T "$projects" -X "$ignoref"
     red "Produced $archivef $archived"
 }
 safe_check() {
@@ -324,8 +353,9 @@ install_plone_deps() {
     if [[ ! -e $w/zope/plone ]];then
         mkdir -pv $w/zope/plone
         mkdir -pv $w/minilays/plone
-        cp $w/eggs/pil-1.1.7/bootstrap.py $w/zope/plone
-cat > $w/minilays/plone/plone << EOF
+    fi
+    cp $w/dependencies/zlib-1.2/bootstrap.py $w/zope/plone
+    cat > $w/minilays/plone/plone << EOF
 [minibuild]
 dependencies= libxml2-2.7 libxslt-1.1 py-libxml2-2.7 py-libxslt-1.1 pil-1.1.7 libiconv-1.12 python-2.7 git-1.7 subversion-1.7 openldap-2.4
 install_method=buildout
@@ -336,7 +366,7 @@ homepage=
 description=
 buildout_config=buildout.cfg
 EOF
-cat > $w/zope/plone/buildout.cfg << EOF
+    cat > $w/zope/plone/buildout.cfg << EOF
 [buildout]
 versions = versions
 parts = part
@@ -344,12 +374,12 @@ hooks-directory = \${buildout:directory}/hooks
 develop-eggs-directory=../../eggs/develop-eggs
 eggs-directory=../../eggs/cache
 [versions]
+zc.buildout=1.7.1
 [part]
 recipe = plone.recipe.command
 update-command=\${part:command}
 command = echo installed
 EOF
-    fi
     minimerge_wrapper plone
 }
 install_project(){
