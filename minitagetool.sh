@@ -477,6 +477,11 @@ sync() {
     install_minitage
     install_minitage_python
 }
+cgwb(){
+    minimerge_wrapper cgwb
+    cd "$w/bfg/cgwb"
+    ./l.sh
+}
 do_mount(){
     cd "$w"
     echo "enter root password"
@@ -486,17 +491,22 @@ do_mount(){
 }
 selfupgrade() {
     local do_sync="$DO_SYNC"  online="$ONLINE"
-    export ONLINE=y DO_SYNC=y
+    export ONLINE="y" DO_SYNC="y"
     refresh
     install_plone_deps
-    qpushd "$w/bfg/cgwb"
-    git pull
-    if [[ -f bin/develop ]];then
-        bin/develop up -v
+    if [[ -e $w/bfg/cgwb/bin/develop ]];then
+        qpushd "$w/bfg/cgwb"
+        git pull
+        if [[ -f bin/develop ]];then
+            qpushd src.others/collective.generic.skel
+            git pull
+            qpopd
+        fi
+        minimerge_wrapper -NRv cgwb
     fi
+    export DO_SYNC="$do_sync" ONLINE="$online"
     qpopd
-    DO_SYNC=$do_sync
-    ONLINE=$online
+
 }
 checkout_or_update() {
     for d in sources eggs/cache;do
@@ -520,9 +530,13 @@ checkout_or_update() {
     rm -f  "$w/$THIS"
     ln -sf "$w/sources/minitage.shell/$THIS" "$w/$THIS"
 }
-bootstrap() {
+# wrapper to be used only once at bootstrap time
+boot_checkout_or_update() {
     checkout_or_update
-    ONLINE="TRUE" DO_SYNC="TRUE" ./$THIS deploy
+}
+bootstrap() {
+    make boot_checkout_or_update
+    ONLINE="TRUE" DO_SYNC="TRUE" "./$THIS" deploy
 }
 usage() {
     echo "        --------------------"
@@ -556,6 +570,9 @@ usage() {
     red "Upgrade minitage"
     green "     ./$THIS selfupgrade"
     echo
+    red "Launch cgwb"
+    green "     ./$THIS cgwb"
+    echo
     red "ReDeploy a snapshot with:"
     warn "WARNING: it touches ~/.buildout/default.cfg to set the local download cache"
     green "     tar xzvf <minitageoffline-CHRONO-base.tar.gz>"
@@ -567,9 +584,9 @@ usage() {
     red "my (kiorky) test virtual machine & host, "
     red "read it to see if it is useful in your case"
 }
-script_usage="$0 selfupgrade|refresh|bootstrap|checkout_or_update|deploy|snapshot|eggpush|mount|sync|push"
+script_usage="$0 cgwb|selfupgrade|refresh|bootstrap|checkout_or_update|deploy|snapshot|eggpush|mount|sync|push"
 case $command in
-    eggpush|bootstrap|push|deploy|snapshot|sync|refresh|checkout_or_update|selfupgrade) $command ;;
+    eggpush|bootstrap|push|deploy|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ;;
     mount) do_${command} ;;
     help|--help|-h|usage) usage ;;
     *) echo $script_usage ;;

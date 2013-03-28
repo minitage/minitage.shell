@@ -417,10 +417,10 @@ ez_offline() {
 }
 
 installorupgrade_setuptools(){
-    local myfullpath="$(ls $download_dir/distribute_setup.py)"
-    local dist="$(ls $download_dir/../dist/distribute*z -1|head -n1)"
+    local myfullpath="$(ls "$download_dir/distribute_setup.py")"
     # check the download is good
     download "$ez_mirror" "$ez_md5"
+    local dist="$(find "$download_dir" "$download_dir/../dist" -iname distribute*z |head -n1)"
     qpushd $prefix
     local extra_args=""
     if [[ -n $offline ]];then
