@@ -522,7 +522,7 @@ selfupgrade() {
 }
 install_tool() {
     rm -f  "$w/$THIS" "$w/bin/$THIS"
-    if [[! -d "$w/bin" ]];then
+    if [[ ! -d "$w/bin" ]];then
         mkdir -pv "$w/bin"
     fi
     ln -sf "$w/sources/minitage.shell/$THIS" "$w/$THIS"
