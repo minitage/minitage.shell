@@ -97,6 +97,11 @@ DOWNLOADS_DIR="$w/downloads"
 fl="$fl $DOWNLOADS_DIR/dist"
 fl="$fl $DOWNLOADS_DIR/minitage/eggs"
 fl="$fl $w/eggs/cache"
+if [[ -f $(which gsed 2>&1) ]];then
+SED="$(which gsed)"
+else
+    SED="$(which sed)"
+fi
 GREEN=$'\e[32;01m'
 YELLOW=$'\e[33;01m'
 RED=$'\e[31;01m'
@@ -105,7 +110,7 @@ NORMAL=$'\e[0m'
 LOGGER="${LOGGER:-"minitagetool"}"
 log() {
     echo "${BLUE}${LOGGER}:${NORMAL} $@"
-} 
+}
 warn() {
     log $(echo "${YELLOW}$@${NORMAL}")
 }
@@ -117,7 +122,7 @@ green() {
 }
 red() {
     log $(echo "${RED}$@${NORMAL}")
-}                         
+}
 # freebsd
 if [[ $(uname) == "FreeBSD" ]];then
     if [[ -f $(which fetch 2>&1) ]];then
@@ -146,12 +151,8 @@ minimerge_wrapper() {
     minimerge $args $@ || die "minimerge $args $@ failed"
     deactivate
 }
-if [[ -f $(which gsed 2>&1) ]];then
-SED="$(which gsed)"
-else
-    SED="$(which sed)"
-fi
 configure_buildout() {
+    dcfg="$HOME/.buildout/default.cfg"
     if [[ ! -e ~/.buildout ]];then
         mkdir ~/.buildout
     fi
@@ -162,15 +163,20 @@ download-directory = $DOWNLOADS_DIR
 download-cache =     $DOWNLOADS_DIR
 EOF
 else
-    nb=$(grep "$w/downloads" ~/.buildout/default.cfg | wc -l)
+    "${SED}" -re \
+        "s:^download-directory.*:download-directory=${DOWNLOADS_DIR}:g" \
+        -i "$dcfg"
+    "${SED}" -re \
+        "s:^download-cache.*:download-cache=${DOWNLOADS_DIR}:g" \
+        -i "$dcfg"
+    nb=$(grep  $DOWNLOADS_DIR "$dcfg" | wc -l)
     if [[ "$nb" == "0" ]];then
-        cat >> ~/.buildout/default.cfg << EOF
+        cat >> "$dcfg" << EOF
 download-directory = $DOWNLOADS_DIR
 download-cache =     $DOWNLOADS_DIR
 EOF
     fi
-    ${SED} -re "s/download-directory.*/download-directory=${DOWNLOADS_DIR}/g" -i ~/.buildout/default.cfg
-    ${SED} -re "s/download-cache.*/download-directory=${DOWNLOADS_DIR}/g" -i ~/.buildout/default.cfg
+
 fi
 }
 install_pyboostrap() {
@@ -258,7 +264,7 @@ ez_offline() {
 develop_only() {
     local eggdir="$1" pyprefix="${2:-$w}" py="" online="$ONLINE"
     py="$(ls $pyprefix/bin/python|tail -n1)"
-    red "Installing $egg"
+    red "Installing $eggdir"
     qpushd "$eggdir"
     eggdir="$PWD"
     "$py" setup.py develop -qNH None -f "$fl" || die "develop_only failed for egg: $eggdir"
