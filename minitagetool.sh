@@ -138,6 +138,7 @@ qpopd() {
 }
 minimerge_wrapper() {
     local args="-v"
+    configure_buildout
     if [[ -z $ONLINE ]];then
         args="$args -o"
     fi
@@ -145,6 +146,11 @@ minimerge_wrapper() {
     minimerge $args $@ || die "minimerge $args $@ failed"
     deactivate
 }
+if [[ -f $(which gsed 2>&1) ]];then
+SED="$(which gsed)"
+else
+    SED="$(which sed)"
+fi
 configure_buildout() {
     if [[ ! -e ~/.buildout ]];then
         mkdir ~/.buildout
@@ -163,6 +169,8 @@ download-directory = $DOWNLOADS_DIR
 download-cache =     $DOWNLOADS_DIR
 EOF
     fi
+    ${SED} -re "s/download-directory.*/download-directory=${DOWNLOADS_DIR}/g" -i ~/.buildout/default.cfg
+    ${SED} -re "s/download-cache.*/download-directory=${DOWNLOADS_DIR}/g" -i ~/.buildout/default.cfg
 fi
 }
 install_pyboostrap() {
