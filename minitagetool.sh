@@ -16,7 +16,7 @@ shift
 THIS=minitagetool.sh
 ARCHIVES_PATH="${ARCHIVES_PATH:-"$w/snapshots"}"
 COMMAND_ARGS=$@
-sync_path=${BASE_EGGS:-"${w}/host/home/kiorky/projects/repos/hg.minitage.org/eggs/"}
+sync_path=${BASE_EGGS:-"${w}/host/home/kiorky/minitage/sources/"}
 GIT_URL="git@github.com:minitage"
 HTTP_URL="http://github.com/minitage"
 sync_minpath=${BASE_EGGS:-"${w}/host/home/kiorky/minitage"}
@@ -228,9 +228,9 @@ install_minitage() {
 to_cache() {
     install_in_cache "zc.buildout<2dev" "$1"
     install_in_cache "zc.buildout>2dev" "$1"
-    rm -rvf "$w/eggs/cache/"*minitage* \
-        "$DOWNLOADS_DIR/dist/"*minitage* \
-        "$DOWNLOADS_DIR/minitage/eggs/"*minitage*
+    rm -rvf "$w/eggs/cache/"*minitag*link \
+        "$DOWNLOADS_DIR/dist/"*minitag* \
+        "$DOWNLOADS_DIR/minitage/eggs/"*minitag*
     for i in $minitage_eggs;do
         qpushd "$w/sources/$i"
         develop_only . $1
