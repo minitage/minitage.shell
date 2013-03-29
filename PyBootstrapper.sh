@@ -71,8 +71,8 @@ python26_mirror="http://python.org/ftp/python/2.6.6/Python-2.6.6.tar.bz2"
 python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
 python27_mirror="http://python.org/ftp/python/2.7.3/Python-2.7.3.tar.bz2"
 python27_md5="c57477edd6d18bd9eeca2f21add73919"
-python_mirror=$python27_mirror
-python_md5=$python27_md5
+python_mirror="$python27_mirror"
+python_md5="$python27_md5"
 
 openssl_mirror="http://www.openssl.org/source/openssl-1.0.1e.tar.gz"
 openssl_md5="66bf6f10f060d561929de96f9dfe5b8c"
@@ -95,13 +95,27 @@ hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
 GREEN=$'\e[32;01m'
 YELLOW=$'\e[33;01m'
 RED=$'\e[31;01m'
-rLUE=$'\e[34;01m'
+BLUE=$'\e[34;01m'
 NORMAL=$'\e[0m'
-
+LOGGER="${LOGGER:-"PyBootStrapper"}"
+log() {
+    echo "${BLUE}${LOGGER}:${NORMAL} $@"
+}
+warn() {
+    log $(echo "${YELLOW}$@${NORMAL}")
+}
+blue() {
+    log $(echo "${BLUE}$@${NORMAL}")
+}
+green() {
+    log $(echo "${GREEN}$@${NORMAL}")
+}
+red() {
+    log $(echo "${RED}$@${NORMAL}")
+}
 # display an error message and exit
 die() {
-    echo $@
-    exit -1
+    red "$@";exit -1
 }
 
 # silently enter a directory
@@ -116,7 +130,7 @@ qpopd() {
 
 check_md5() {
     if [[ "$md5" != "$file_md5" ]];then
-        echo "WARNING:! md5 for $myfullpath failed : $md5 != $file_md5 !"
+        warn "md5 for $myfullpath failed : $md5 != $file_md5 !"
     fi
     if [[ ! -e "$myfullpath" ]];then
         die "$myfullpath"
@@ -128,6 +142,7 @@ check_md5() {
 # $2: file name's md5
 # $3: file name
 #don't put "/" at the end of the URL or provide a file name
+LAST_DOWNLOADED_FILE=""
 download(){
     local md5="$2" myfile="$3" url="$1" mydest=""
     if [[ -n "$url" ]];then
@@ -152,12 +167,13 @@ download(){
         if [[ "$md5" != "NOCHECK" ]];then
             if [[ "$md5" != "$file_md5" ]];then
                 if [[ -n "$md5" ]];then
-                    echo  "!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!! $myfile doesn't match the md5 "$md5" ($file_md5)"
+                    warn  "!!!!! $myfile doesn't match the md5 "$md5" ($file_md5)"
                 fi
             fi
         fi
-        if [[ -n "$offline" ]];then
-            echo "Downloaded $mydest"
+        if [[ -f "$mydest" ]];then
+            green "Got $mydest"
+            LAST_DOWNLOADED_FILE="$mydest"
         fi
     fi
 }
@@ -214,7 +230,6 @@ cmmi() {
     local myname="$1"
     shift
     compile_opts="$@"
-    echo "Running: ./configure $@"
     export CFLAGS=" -fPIC -O3 -I$prefix/include "
     export CPPFLAGS="$CFLAGS"
     export CXXFLAGS="$CFLAGS"
@@ -228,9 +243,7 @@ cmmi() {
     echo $CFLAGS
     make clean
     ./configure $@ || die "$myname config failed"
-    echo "Compiling:"
     make #|| die "$myname compilation failed"
-    echo "Installing:"
     make install || die "$myname install failed"
     unset CFLAGS CPPFLAGS CXXFLAGS LDFLAGS LD_RUN_PATH
 }
@@ -249,20 +262,20 @@ give_filename_from_url() {
 
 compile_bz2() {
     local bz2_cflags="-fpic -fPIC -Wall -Winline -O3  -I. -L. -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
-    # check the download is good
     download "$bz2_mirror" "$bz2_md5"
-    local myfullpath=$(ls -1rt $download_dir/bzip*|head -n1)
+    local myfullpath="${LAST_DOWNLOADED_FILE}"
     mkdir_and_gointo "bz2"
     tar xzvf "$myfullpath" -C .
     cd *
     set_mac_target
     if [[ $UNAME == 'Darwin' ]];then
         download "$bz2_darwinpatch" "$bz2_darwinpatch_md5" "bz2darwin.patch";
-        patch="$download_dir/bz2darwin.patch"
+        patch="${LAST_DOWNLOADED_FILE}"
         sed "s|__MacPorts_Compatibility_Version__|1.0|"  $patch\
             | sed "s|__MacPorts_Version__|1.0.4|"\
             | patch -p0
     fi
+    red "Compiling bzip2"
     make CFLAGS="$bz2_cflags"
     make install PREFIX="$prefix" || die "make install failed"
     # the libbz2 shared library
@@ -278,9 +291,8 @@ compile_bz2() {
     cp bzlib.h "$prefix/include" || die "shared include installation failed"
 }
 compile_zlib() {
-    # check the download is good
     download "$zlib_mirror" "$zlib_md5"
-    local myfullpath=$(ls -1rt $download_dir/zlib*|head -n1)
+    local myfullpath="${LAST_DOWNLOADED_FILE}"
     mkdir_and_gointo "zlib"
     tar xzvf "$myfullpath" -C .
     cd *
@@ -289,14 +301,13 @@ compile_zlib() {
 }
 
 compile_readline(){
-    # check the download is good
     download "$readline_mirror" "$readline_md5"
+    local myfullpath="${LAST_DOWNLOADED_FILE}"
     download "$gentoo_mirror/distfiles/readline62-001" 83287d52a482f790dfb30ec0a8746669 readline62-001
     download "$gentoo_mirror/distfiles/readline62-002" 0665020ea118e8434bd145fb71f452cc readline62-002
     download "$gentoo_mirror/distfiles/readline62-003" c9d5d79718856e711667dede87cb7622 readline62-003
     download "$gentoo_mirror/distfiles/readline62-004" c08e787f50579ce301075c523fa660a4 readline62-004
     mkdir_and_gointo "readline"
-    local myfullpath=$(ls -1rt $download_dir/readline*z|head -n1)
     tar xzvf "$myfullpath" -C .
     cd *
     patch -Np0 < "$download_dir/readline62-001"
@@ -310,42 +321,36 @@ compile_readline(){
     export LD_RUN_PATH="$prefix"
     set_mac_target
     make clean
+    red "Compiling zlib"
     ./configure -prefix="$prefix"  || die "$1 config failed"
-    echo "Compiling:"
     make || die "$1 compilation failed"
-
-    echo "Installing:"
     make install || die "$1 install failed"
-
     unset CFLAGS CPPFLAGS LDFLAGS LD_RUN_PATH
 }
 
 compile_ncurses(){
     myname=ncurses
-    # check the download is good
     download "$ncurses_mirror" "$ncurses_md5"
     mkdir_and_gointo "$myname"
-    local myfullpath=$(ls -1rt $download_dir/ncurs*z|head -n1)
-    echo $myfullpath tamere
+    local myfullpath="${LAST_DOWNLOADED_FILE}"
     tar xzvf "$myfullpath" -C .
     cd *
+    red "Compiling ncurses"
     cmmi  "$myname" --enable-const --enable-colorfgbg --enable-echo\
     --with-shared --enable-rpath \
     --with-manpage-format=normal --with-rcs-ids --enable-symlinks \
     $(if [[ $UNAME == 'Darwin' ]];then echo '--without-libtool';fi) \
     --prefix="$prefix" || die "cmmi failed for $myname"
 }
-
 compile_openssl(){
     local myfullpath="openssl.tgz" platform="" ldflags=""
     ldflags=" -Wl,-rpath -Wl,'$prefix/lib' -Wl,-rpath -Wl,'/lib'"
     sconfigure="./config"
-    # check the download is good
     download "$openssl_mirror" "$openssl_md5"
     mkdir_and_gointo "openssl"
-    local myfullpath=$(ls -1rt $download_dir/openssl*z|head -n1)
+    local myfullpath="${LAST_DOWNLOADED_FILE}"
     tar xzvf "$myfullpath" -C .
-    cd *
+    red "Compiling openssl"
     if [[ $UNAME == 'FreeBSD' ]];then
         platform=""
     fi
@@ -377,12 +382,12 @@ compile_openssl(){
 }
 
 compile_python(){
-    # check the download is good
     download "$python_mirror" "$python_md5"
+    local myfullpath="${LAST_DOWNLOADED_FILE}"
     mkdir_and_gointo "python"
-    local myfullpath=$(ls -1rt $download_dir/Python*2|head -n1)
     tar xjvf "$myfullpath" -C .
     cd *
+    red "Compiling python"
     # XXX OSX hack
     CFLAGS="  -I$prefix/include -I$prefix/include/ncurses -I.    $([[ $UNAME == 'Darwin' ]] && echo '-mmacosx-version-min=10.5.0  -D__DARWIN_UNIX03 ')"
     CFLAGS="$CFLAGS   $([[ $UNAME == 'FreeBSD' ]] && echo '-DTHREAD_STACK_SIZE=0x100000')"
@@ -419,34 +424,38 @@ ez_offline() {
 }
 
 installorupgrade_setuptools(){
-    local myfullpath="distribute_setup.py"
-    # check the download is good
+    red "installing setuptools & virtualenv"
     download "$ez_mirror" NOCHECK "$myfullpath"
-    local dist="$(find "$download_dir" "$download_dir/../dist" -iname distribute*z |head -n1)"
-    qpushd $prefix
-    local extra_args=""
-    if [[ -n $offline ]];then
-        dbase="$download_dir"
-        if [[ -e $dist ]];then
-            dbase="$download_dir/../dist"
-            extra_args="--download-base file://$dbase/"
-        fi
+    local myfullpath="${LAST_DOWNLOADED_FILE}"
+    local paths="$download_dir"
+    if [[ -e "$download_dir/../dist" ]];then
+        paths="$paths "$download_dir"/../dist"
     fi
+    local dist="$(find $paths -name distribute*z|head -n1)"
+    local extra_args=""
+    if [[ -n $offline ]] && [[ -n $dist ]];then
+        local ddist="$(dirname $dist)"
+        extra_args="--download-base file://$ddist/"
+    fi
+    qpushd "$download_dir"
     res=$("$python" "$myfullpath" $extra_args)
+    if [[ -z $dist  ]];then
+        local dist="$(find "$download_dir" -name distribute*z|head -n1)"
+    fi
     qpopd
     res=$(echo $res|$SED -re "s/.*(-U\s*distribute).*/reinstall/g")
     if [[ "$res" == "reinstall" ]];then
        "$python" "$myfullpath" -U Distribute
     fi
     download "$virtualenv_mirror" "$virtualenv_md5"
-    ez_offline "VirtualEnv"   || die "VirtualEnv installation failed"
+    ez_offline "VirtualEnv" || die "VirtualEnv installation failed"
 }
 compile() {
     local done="$prefix/.compiled$1"
     if [[ ! -f $done ]];then
         "compile_$1" && touch $done
     else
-        echo "WARNING: $1 is already compiled (delete '$done' to recompile)."
+        warn "$1 is already compiled (delete '$done' to recompile)."
     fi
 }
 
@@ -469,9 +478,9 @@ main() {
     if [[ -e "$prefix/=" ]];then
         rm -rf -- "$prefix/="
     fi
-    echo "Installation is now finnished."
-    echo "some cleaning is running in the background and may take a while."
-    echo "While it's cleaning, the machine can be a bit slower."
+    green "Installation is now finished."
+    green "some cleaning is running in the background and may take a while."
+    green "While it's cleaning, the machine can be a bit slower."
 }
 
 create_destination() {
@@ -507,17 +516,17 @@ for arg in $@;do
         usage
         exit
     elif [[ $arg == "-2.4" ]] || [[ $arg == "--python-2.4" ]];then
-        echo "$YELLOW User choosed to Build python-2.4 !$NORMAL"
+        warn "User choosed to Build python-2.4 !"
         sleep 2
         python_mirror="$python24_mirror"
         python_md5="$python24_md5"
     elif [[ $arg == "-2.5" ]] || [[ $arg == "--python-2.5" ]];then
-        echo "$YELLOW User choosed to Build python-2.5 !$NORMAL"
+        warn "User choosed to Build python-2.5 !"
         sleep 2
         python_mirror="$python25_mirror"
         python_md5="$python25_md5"
     elif [[ $arg == "-2.6" ]] || [[ $arg == "--python-2.6" ]];then
-        echo "$YELLOW User choosed to Build python-2.6 !$NORMAL"
+        warn "User choosed to Build python-2.6 !"
         sleep 2
         python_mirror="$python26_mirror"
         python_md5="$python26_md5"
