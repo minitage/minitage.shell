@@ -350,6 +350,7 @@ compile_openssl(){
     mkdir_and_gointo "openssl"
     local myfullpath="${LAST_DOWNLOADED_FILE}"
     tar xzvf "$myfullpath" -C .
+    cd *
     red "Compiling openssl"
     if [[ $UNAME == 'FreeBSD' ]];then
         platform=""
