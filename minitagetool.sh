@@ -531,7 +531,6 @@ selfupgrade() {
     local do_sync="$SYNC"  online="$ONLINE"
     export ONLINE="y" SYNC="y"
     refresh
-    breakp
     install_plone_deps
     minimerge_wrapper -NRv cgwb
     export SYNC="$do_sync" ONLINE="$online"
