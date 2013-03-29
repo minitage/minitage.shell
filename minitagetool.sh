@@ -620,6 +620,6 @@ case $command in
     eggpush|bootstrap|push|deploy|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
     mount) do_${command} ${COMMAND_ARGS};;
     help|--help|-h|usage) usage ;;
-    *) echo $script_usage ;;
+    *) green "$0 usage for long help";green $script_usage ;;
 esac
 # vim:set et sts=4 ts=4 tw=80:
