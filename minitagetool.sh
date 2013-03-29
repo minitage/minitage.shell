@@ -173,7 +173,7 @@ install_pyboostrap() {
     if [[ ! -d "${DOWNLOADS_DIR}" ]];then
         mkdir -p "${DOWNLOADS_DIR}"
     fi
-    DOWNLOADS_DIR="$DOWNLOADS_DIR/minitage" "$PYB" -o $args "$PYPATH" || die "pybootstrapper failed  !"
+    DOWNLOADS_DIR="$DOWNLOADS_DIR/minitage" "$PYB"  $args "$PYPATH" || die "pybootstrapper failed  !"
 }
 virtualenv() {
     rm -rf "$w/bin" "$w/include"  "$w/lib"
