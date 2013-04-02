@@ -768,7 +768,7 @@ case $command in
         usage
         ;;
     *)
-        long_usage
+        short_usage
         ;;
 esac
 # vim:set et sts=4 ts=4 tw=80:
