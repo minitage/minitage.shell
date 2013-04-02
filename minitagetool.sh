@@ -765,6 +765,7 @@ case $command in
             for c in $help_commands;do
                 if [[ "$i" == "$c" ]];then
                     short_usage
+                    log
                     usage_$i
                     exit
                 fi
