@@ -722,6 +722,7 @@ usage_selfupgrade(){
 usage_cgwb(){
     red "Launch cgwb"
     green "     $w/$THIS cgwb"
+    green " Then visite http://localhost:8085"
 }
 
 usage() {
@@ -748,13 +749,16 @@ usage() {
 }
 script_usage="usage"
 script_usage_self="bootstrap|selfupgrade"
-script_usage_deploy="deploy|offlinedeploy|snapshot"
+script_usage_deploy="deploy|offlinedeploy|snapshot|cgwb"
 script_usage_intern="refresh|checkout_or_update|eggpush|mount|sync|push"
 short_usage() {
-    sgreen "$(sgreen Run )$(sblue "$0 ${script_usage} [command]")$(sgreen " for long help")"
-    sgreen "$0 $(syellow "Install: ") $(sred  ${script_usage_self})"
-    sgreen "$0 $(syellow "Deploy:")   $(sred  ${script_usage_deploy})"
-    sgreen "$0 $(syellow "Internal:") $(sred  ${script_usage_intern})"
+    echo
+    sgreen "$(sgreen Run )$(sblue " $0 ${script_usage}           ")$(sgreen " for long help")"
+    sgreen "$(sgreen Run )$(sblue " $0 ${script_usage} <COMPMAND>")$(sgreen " for command help")"
+    echo
+    sgreen "$0 $(syellow "Maintain: ")$(sred  ${script_usage_self})"
+    sgreen "$0 $(syellow "Use:      ")$(sred  ${script_usage_deploy})"
+    sgreen "$0 $(syellow "Internal: ")$(sred  ${script_usage_intern})"
 }
 help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb"
 case $command in
@@ -765,7 +769,7 @@ case $command in
             for c in $help_commands;do
                 if [[ "$i" == "$c" ]];then
                     short_usage
-                    log
+                    echo
                     usage_$i
                     exit
                 fi
