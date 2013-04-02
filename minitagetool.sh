@@ -714,6 +714,16 @@ usage_bootstrap() {
     green "  $THIS bootstrap $(sblue "# take a coffee...")  $(syellow "-> NEED TO HAVE INTERNET & GIT")"
 }
 
+usage_selfupgrade(){
+    red "Upgrade minitage"
+    green "     $w/$THIS selfupgrade"
+}
+
+usage_cgwb(){
+    red "Launch cgwb"
+    green "     $w/$THIS cgwb"
+}
+
 usage() {
     syellow "               --------------------"
     syellow "               | MINITAGE  HELPER |"
@@ -728,11 +738,9 @@ usage() {
     log
     usage_snapshot
     log
-    red "Upgrade minitage"
-    green "     $w/$THIS selfupgrade"
+    usage_selfupgrade
     log
-    red "Launch cgwb"
-    green "     $w/$THIS cgwb"
+    usage_cgwb
     log
     red "$script_usage_intern"
     warn "      Aadvanced/internal commands, see the code if you want to use them"
@@ -748,21 +756,19 @@ short_usage() {
     sgreen "$0 $(syellow "Deploy:")   $(sred  ${script_usage_deploy})"
     sgreen "$0 $(syellow "Internal:") $(sred  ${script_usage_intern})"
 }
+help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb"
 case $command in
     eggpush|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
     mount) do_${command} ${COMMAND_ARGS};;
     help|--help|-h|usage)
         for i in ${COMMAND_ARGS};do
-            echo $i
-            if [[ $i == "snapshot" ]]  \
-               || [[ $i == "deploy" ]]\
-               || [[ $i == "offlinedeploy" ]]\
-               || [[ $i == "bootstrap" ]]\
-            ;then
-                short_usage
-                usage_$i
-                exit
-            fi
+            for c in $help_commands;do
+                if [[ "$i" == "$c" ]];then
+                    short_usage
+                    usage_$i
+                    exit
+                fi
+            done
         done
         log
         usage
