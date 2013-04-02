@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+LAUNCH_DIR=$PWD
 cd $(dirname $0)
 w=$PWD
 for i in "$w" "$w/.." "$w/../.." "$w/../../.." "$w/../../../..";do
@@ -539,6 +540,7 @@ do_selfupgrade() {
 selfupgrade() {
     export ONLINE="y" SYNC="y"
     refresh
+    cd "$LAUNCH_DIR"
     ONLINE="y" SYNC="y" "$0" do_selfupgrade ${COMMAND_ARGS}
 
 }
