@@ -21,7 +21,21 @@ sync_path=${BASE_EGGS:-"${w}/host/home/kiorky/minitage/sources/"}
 GIT_URL="git@github.com:minitage"
 HTTP_URL="http://github.com/minitage"
 sync_minpath=${BASE_EGGS:-"${w}/host/home/kiorky/minitage"}
-PYPATH=$w/tools/python
+PYPATH="$w/tools/python"
+# search for old installs
+if [[ ! -e "$w/tools/" ]];then
+    mkdir -pv "$w/tools/"
+fi
+PYPATHS="$w/tools"
+if [[ -d "$HOME/tools" ]];then
+    PYPATHS="$PYPATHS $HOME/tools"
+fi
+for i in $(ls -drt $(for j in $PYPATHS;do echo "$j"/*;done) 2>/dev/null);do
+    if [[ -e "$i/.compiledpython" ]];then
+        PYPATH="$i"
+        break
+    fi
+done
 PYB="$w/sources/minitage.shell/PyBootstrapper.sh"
 ONLINE="${ONLINE:-""}"
 SYNC="$SYNC:-""}"
