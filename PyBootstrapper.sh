@@ -382,7 +382,7 @@ compile_openssl(){
     make install || die "make install openssl failed"
 }
 
-compile_python(){
+compile_pythoni(){
     download "$python_mirror" "$python_md5"
     local myfullpath="${LAST_DOWNLOADED_FILE}"
     mkdir_and_gointo "python"
@@ -451,6 +451,7 @@ installorupgrade_setuptools(){
     download "$virtualenv_mirror" "$virtualenv_md5"
     ez_offline "VirtualEnv" || die "VirtualEnv installation failed"
 }
+
 compile() {
     local done="$prefix/.compiled$1"
     if [[ ! -f $done ]];then
@@ -466,7 +467,14 @@ bootstrap() {
     compile ncurses  || die "compile_and_install ncurses failed"
     compile readline || die "compile_and_install_readline failed"
     compile openssl  || die "compile_and_install_openssl failed"
-    compile python   || die "compile_and_install_python failed"
+    compile pythoni  || die "compile_and_install_python failed"
+}
+
+
+compile_installdone() {
+    green "Installation is now finished."
+    green "some cleaning is running in the background and may take a while."
+    green "While it's cleaning, the machine can be a bit slower."
 }
 
 main() {
@@ -479,10 +487,9 @@ main() {
     if [[ -e "$prefix/=" ]];then
         rm -rf -- "$prefix/="
     fi
-    green "Installation is now finished."
-    green "some cleaning is running in the background and may take a while."
-    green "While it's cleaning, the machine can be a bit slower."
+    compile installdone
 }
+
 
 create_destination() {
     local cli_dir="$1"

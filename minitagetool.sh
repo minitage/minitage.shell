@@ -17,6 +17,7 @@ shift
 THIS=minitagetool.sh
 ARCHIVES_PATH="${ARCHIVES_PATH:-"$w/snapshots"}"
 COMMAND_ARGS=$@
+CGWB_MINILAY="https://github.com/collective/collective.generic.webbuilder-minilay.git"
 sync_path=${BASE_EGGS:-"${w}/host/home/kiorky/minitage/sources/"}
 GIT_URL="git@github.com:minitage"
 HTTP_URL="http://github.com/minitage"
@@ -37,7 +38,7 @@ for i in $(ls -drt $(for j in $PYPATHS;do echo "$j"/*;done) 2>/dev/null);do
     fi
 done
 PYB="$w/sources/minitage.shell/PyBootstrapper.sh"
-ONLINE="${ONLINE:-""}"
+ONLINE="${ONLINE:-"y"}"
 SYNC="$SYNC:-""}"
 MINITAGE_DEPS="
 iniparse
@@ -127,14 +128,26 @@ LOGGER="${LOGGER:-"minitagetool"}"
 log() {
     echo "${BLUE}${LOGGER}:${NORMAL} $@"
 }
+syellow() {
+    echo "${YELLOW}$@${NORMAL}"
+}
 warn() {
     log $(echo "${YELLOW}$@${NORMAL}")
+}
+sblue() {
+    echo "${BLUE}$@${NORMAL}"
 }
 blue() {
     log $(echo "${BLUE}$@${NORMAL}")
 }
+sgreen() {
+    echo "${GREEN}$@${NORMAL}"
+}
 green() {
     log $(echo "${GREEN}$@${NORMAL}")
+}
+sred() {
+    echo "${RED}$@${NORMAL}"
 }
 red() {
     log $(echo "${RED}$@${NORMAL}")
@@ -205,31 +218,38 @@ install_pyboostrap() {
     fi
     DOWNLOADS_DIR="$DOWNLOADS_DIR/minitage" "$PYB" $args "$PYPATH" || die "pybootstrapper failed !"
 }
-virtualenv() {
+
+install_virtualenv() {
+    green "Making a new virtualenv"
     rm -rf "$w/bin" "$w/include"  "$w/lib"
-    markers="fetch_initial_deps|install_pyboostrap|boot_checkout_or_update|virtualenv"
-    rm -f $(ls -1a "$w/.com*"|egrep -v "$markers")
     "$PYPATH/bin/virtualenv" --distribute --no-site-packages "$w" || die "virtualenv failed"
-    make deploy_minitage
+    ln -sf "$w/minitagetools.sh" "$w/bin"
+    install_minitage_deps
+    install_tool
 }
+
+
 deploy_minitage() {
-    local skipdeps="$1" make="make"
-    if [[ -n $skipdeps ]];then
-        make=""
-    fi
-    $make install_minitage_deps
+    green "Deploying minitage"
+    local do_step="do_step"
     install_minitage
-    if [[ -n ${SYNC} ]] && [[ -f "$w/bin/minimerge" ]];then
+    if [[ -n $ONLINE ]] && [[ -n ${SYNC} ]];then
         minimerge_wrapper -s
     fi
     install_minitage_python
+    if [[ -n $ONLINE ]];then
+        install_cgwb
+    fi
 }
+
 refresh() {
     if [[ -n ${SYNC} ]];then
         checkout_or_update
     fi
 }
+
 install_minitage() {
+    green "Deploying minitage core dependencies"
     local py="${1:-"${w}"}"
     for i in $minitage_eggs_core;do
         pushd "$w/sources/$i"
@@ -238,7 +258,9 @@ install_minitage() {
     done
     to_cache "$w"
 }
+
 to_cache() {
+    green "Deploying minitage to buildout caches"
     install_in_cache "zc.buildout<2dev" "$1"
     install_in_cache "zc.buildout>2dev" "$1"
     rm -rvf "$w/eggs/cache/"*minitag*link \
@@ -250,21 +272,18 @@ to_cache() {
         qpopd
     done
 }
+
 install_minitage_python() {
     local pys="python-2.7 python-2.6 python-2.4"
     for python in $pys;do
         minimerge_wrapper "$python" || warn "$python build failed, skipping"
     done
-    #for python in $pys;do
-    #    local pyprefix="$w/dependencies/${python}/parts/part"
-    #    if [[ -e $pyprefix ]];then
-    #        to_cache $pyprefix
-    #    fi
-    #done
 }
+
 die() {
     red $@;exit -1
 }
+
 ez_offline() {
     local egg="$1" pyprefix="${2:-$w}" ez=""
     ez="$(ls $pyprefix/bin/easy_install*|tail -n1)"
@@ -274,6 +293,7 @@ ez_offline() {
         "$ez" -H None -f "$fl" "$egg" || die "easy install (offline) failed for egg"
     fi
 }
+
 develop_only() {
     local eggdir="$1" pyprefix="${2:-$w}" py="" online="$ONLINE"
     py="$(ls $pyprefix/bin/python|tail -n1)"
@@ -307,24 +327,29 @@ install_in_cache() {
         "$ez" -qmxd "$w/eggs/cache" -H None -f "$fl" "$egg" || die "easy install in cache failed for egg: $egg"
     fi
 }
+
 install_minitage_deps() {
     local pyprefix="${1:-$w}"
     for i in $MINITAGE_DEPS;do
         ez_offline "$i" "$pyprefix" || die "cant install egg: $i"
     done
 }
-make() {
+
+do_step() {
     local sdone="$w/.compiled_"
     for i in $@;do
         sdone="${sdone}-${i}"
     done
     if [[ ! -f $sdone ]];then
+        green "run: $1"
         "$1" && touch $sdone
     else
         warn "$1 is already done (delete '$sdone' to redo)."
     fi
 }
+
 snapshot() {
+    green "Running snapshot"
     local CHRONO=$(date +"%Y-%m-%d-%H-%M-%S")
     cd "$w"
     local f=BASE.txt
@@ -396,14 +421,16 @@ snapshot() {
     local snapf="${sbase}-base.tbz2"
     local snapd="${sbase}-downloads.tbz2"
     local snapp="${sbase}-projects.tbz2"
-    warn "Archiving minitage in $snapf $snapd $snapp?"
+    green "Archiving minitage in $snapf $snapd $snapp?"
     warn "<C-C> to abort";read
     tar cjvf "$snapf" -T "$f" -X "$ignoref"
     tar cjvf "$snapd" -T "$download" -X "$ignoref"
     tar cjvf "$snapp" -T "$projects" -X "$ignoref"
     red "Produced $snapf $snapd $snapp"
 }
+
 safe_check() {
+    green "Safe check"
     local pypi=$(egrep "^127\.0\.0\.1.*pypi.python.org" /etc/hosts|wc -l)
     if [[ "$pypi" == "0" ]];then
         if [[ -z ${ONLINE} ]];then
@@ -413,7 +440,9 @@ safe_check() {
         fi
     fi
 }
+
 install_plone_deps() {
+    green "Installing plone dependencies"
     if [[ ! -e $w/zope/plone ]];then
         mkdir -pv "$w/zope/plone"
         mkdir -pv "$w/minilays/plone"
@@ -446,46 +475,80 @@ command = echo installed
 EOF
     minimerge_wrapper plone
 }
-install_cgwb(){
-    CGWB_MINILAY="https://github.com/collective/collective.generic.webbuilder-minilay.git"
+
+install_cgwb() {
+    green "Installing cgwb"
     qpushd "$w/minilays"
-    if [[ ! -d cgwb ]];then
+    if [[ ! -d cgwb ]] && [[ -n "$ONLINE" ]];then
         git clone "$CGWB_MINILAY" cgwb
     fi
     qpopd
-    minimerge_wrapper -v cgwb
+    minimerge_wrapper --only-dependencies cgwb
+    minimerge_wrapper -NRv cgwb
     qpushd "$w/bfg/cgwb/src.others"
     rm -rf minitage.paste
     ln -sf "$w/sources/minitage.paste"
     qpopd
 }
-install_project(){
+
+install_project() {
+    green "Installing project :$1"
     minimerge_wrapper --only-dependencies $i
     minimerge_wrapper -NE $1
-    minimerge_wrapper -NRv $i
+    minimerge_wrapper -aNRv $i
 }
+
 fetch_initial_deps() {
+    green "Fetch initial dependencies"
     minimerge_wrapper -s
     minimerge_wrapper --fetchonly --only-dependencies all
 }
-deploy(){
+
+have_python() {
+    local ret=""
+    for marker in .compiledinstalldone .compiledpython;do
+        if [[ -e $PYPATH/$marker ]];then
+            ret="true"
+        fi
+    done
+    echo $ret
+}
+
+offlinedeploy() {
+    green "Running $THIS is offline mode"
+    ONLINE="" deploy $@
+}
+
+deploy() {
+    green "Running deploy procedure"
+    local cargs="${@:-"${COMMAND_ARGS}"}"
+    local vdo_step="do_step" mbase="do_step"
     configure_buildout
-    make install_pyboostrap
-    make virtualenv
+    # if python has gone, just redo projects
+    if [[ -z "$(have_python)" ]];then
+        install_pyboostrap
+        vdo_step=""
+    fi
+    if [[ -z "$vdo_step" ]] || [[ -n "$MINITAGEBASE" ]];then
+        mbase=""
+    fi
+    if [[ ! -f "$w/bin/minimerge" ]];then
+        mbase=""
+    fi
+    $vdo_step install_virtualenv
     safe_check
     if [[ -n ${ONLINE} ]];then
         if [[ -n ${SYNC} ]];then
-            make fetch_initial_deps
+            do_step fetch_initial_deps
         fi
     fi
-    make install_plone_deps
-    if [[ -n $ONLINE ]];then
-        make install_cgwb
-    fi
-    for i in ${COMMAND_ARGS};do
+    $mbase deploy_minitage
+    $mbase install_plone_deps
+    for i in ${cargs};do
         install_project $i
     done
 }
+
 eggpush() {
     for i in $sync_eggs;do
         rsync -azv \
@@ -494,10 +557,13 @@ eggpush() {
             "$sync_path/$i/"
     done
 }
+
 push() {
     eggpush
 }
+
 sync() {
+    green "Synchonnising minitage code base"
     for i in eggs dependencies eggs/cache minilays;do
         if [[ ! -e "$w/$i" ]];then
             mkdir "$w/$i"
@@ -522,43 +588,45 @@ sync() {
     for i in eggs dependencies;do
         rsync -azv "${sync_minpath}/minilays/$i/" "$w/minilays/$i/"
     done
-    install_minitage
-    install_minitage_python
+    SKIPCHECKOUTS="y" selfupgrade
 }
-cgwb(){
+
+cgwb() {
+    green "Launching cgwb"
     minimerge_wrapper cgwb
     cd "$w/bfg/cgwb"
     ./l.sh
 }
-do_mount(){
+
+do_mount() {
     cd "$w"
     echo "enter root password"
     su -c "route del default"
     [[ ! -d host ]] && mkdir host
     sshfs host:/ host
 }
+
 breakp() {
     red "here";read
 }
+
 do_selfupgrade() {
-    if [[ -f "$w/.compiled_-virtualenv" ]];then
-        deploy_minitage skipdeps
-    fi
-    deploy
-    install_plone_deps
-    minimerge_wrapper -NRv cgwb
-    if [[ -n ${COMMAND_ARGS} ]];then
-        deploy ${COMMAND_ARGS}
-    fi
+    MINITAGEBASE="y" deploy
 }
+
 selfupgrade() {
+    green "Upgrading minitage"
     export ONLINE="y" SYNC="y"
-    refresh
+    if [[ -z ${SKIPCHECKOUTS} ]];then
+        refresh
+    fi
     cd "$LAUNCH_DIR"
     ONLINE="y" SYNC="y" "$0" do_selfupgrade ${COMMAND_ARGS}
 
 }
+
 install_tool() {
+    green "Install minitagetool"
     rm -f  "$w/$THIS" "$w/bin/$THIS"
     if [[ ! -d "$w/bin" ]];then
         mkdir -pv "$w/bin"
@@ -566,7 +634,9 @@ install_tool() {
     ln -sf "$w/sources/minitage.shell/$THIS" "$w/$THIS"
     ln -sf "$w/sources/minitage.shell/$THIS" "$w/bin/$THIS"
 }
+
 checkout_or_update() {
+    green "Synchronnising minitage codebase"
     for d in sources eggs/cache;do
         if [[ ! -d "$d" ]];then
             mkdir -pv "$d"
@@ -598,66 +668,108 @@ boot_checkout_or_update() {
     checkout_or_update
 }
 bootstrap() {
-    local make="make"
+    green "Bootstrapping minitage"
+    local do_step="do_step"
     for i in $@;do
         if [[ $i == "sync" ]];then
-            make=""
+            do_step=""
         fi
     done
-    $make boot_checkout_or_update
+    $do_step boot_checkout_or_update
     ONLINE="TRUE" SYNC="TRUE" "$w/$THIS" deploy
 }
-usage() {
-    echo "        --------------------"
-    warn "        | MINITAGE  HELPER |"
-    echo "        --------------------"
-    blue "$script_usage"
-    echo
-    red "To make a minitage installation usable in offline mode / fixed mode,"
-    red "You need to setup things like that:"
-    echo
-    red "First, deploy a special minitage for snapshoting  the install"
-    red "Then install your project minilay & run the minimerge dance"
-    warn "WARNING: it touches ~/.buildout/default.cfg to set the local download cache"
-    green "  cd minitage_root"
-    green "  wget -O $THIS https://raw.github.com/minitage/minitage.shell/master/$THIS"
-    green "  chmod +x $THIS"
-    echo
-    red "Installing the base minitage dependencies $(warn "-> NEED TO HAVE INTERNET & GIT")"
-    green "  $w/$THIS bootstrap $(blue "# take a coffee...")"
-    echo
-    red "Installing your a project and then making a snapshot $(warn "-> NEED TO HAVE INTERNET")"
+
+usage_deploy() {
+    red "Installing your a project $(syellow "-> NEED TO HAVE INTERNET & GIT")"
     green "  cd minitage/minilays && git clone minilay"
-    green "  bin/minimerge <project>"
-    green "  $w/$THIS snapshot"
-    echo
-    red "This produce snapshots in the current directory:"
-    green "  - $(blue "${ARCHIVES_PATH}/<minitageoffline-CHRONO-base.tar.gz>")$(green "      : Minitage base code")"
-    green "  - $(blue "${ARCHIVES_PATH}/<minitageoffline-CHRONO-downloads.tar.gz>")$(green " : Download & egg cache")"
-    green "  - $(blue "${ARCHIVES_PATH}/<minitageoffline-CHRONO-projects.tar.gz>")$(green " : Download & egg cache")"
-    echo
-    red "Upgrade minitage"
-    green "     $w/$THIS selfupgrade"
-    echo
-    red "Launch cgwb"
-    green "     $w/$THIS cgwb"
-    echo
+    green "  $w/$THIS deploy <project minibuild> [ <otherproject> ]"
+}
+
+usage_offlinedeploy() {
+    red "Installing your a project without internet (need either extracted snapshots or archive dependencies in $w/downloads)"
+    green "  $w/$THIS offlinedeploy <project minibuild>"
+}
+
+usage_snapshot() {
+    red "Produce minitage snapshots $(syellow "(can filter projects to archive)")"
+    green "  $w/$THIS snapshot [ <project> [ ... <project> ]]]"
+    log "  $(sgreen -) $(sblue "${ARCHIVES_PATH}/<minitageoffline-CHRONO-base.tar.gz>")      $(sgreen ": Minitage base code")"
+    log "  $(sgreen -) $(sblue "${ARCHIVES_PATH}/<minitageoffline-CHRONO-downloads.tar.gz>") $(sgreen ": Download & egg cache")"
+    log "  $(sgreen -) $(sblue "${ARCHIVES_PATH}/<minitageoffline-CHRONO-projects.tar.gz>")  $(sgreen ": Download & egg cache")"
+    log
     red "ReDeploy a snapshot with:"
     warn "WARNING: it touches ~/.buildout/default.cfg to set the local download cache"
     green "     tar xzvf <minitageoffline-CHRONO-base.tar.gz>"
     green "     tar xzvf <minitageoffline-CHRONO-downloads.tar.gz>"
     green "     tar xzvf <minitageoffline-CHRONO-projects.tar.gz>"
-    green "     $w/$THIS deploy <project> [... <project3>]$(blue "# install an offlinizable-minitage in the current directory")"
-    echo
-    red "checkout_or_update && eggpush && mount && sync && refresh && push targets are to sync code between"
-    red "my (kiorky) test virtual machine & host, "
-    red "read it to see if it is useful in your case"
+    green "     $w/$THIS offlinedeploy <project> [... <project3>]$(sblue "# install an offlinizable-minitage in the current directory")"
 }
-script_usage="$0 cgwb|selfupgrade|refresh|bootstrap|checkout_or_update|deploy|snapshot|eggpush|mount|sync|push"
+
+usage_bootstrap() {
+    red "Bootstrapping (AKA installing) minitage or upgrading from minitage non-tool installations"
+    warn "WARNING: it touches ~/.buildout/default.cfg to set the local download cache"
+    green "  cd minitage_root"
+    green "  wget -O $THIS https://raw.github.com/minitage/minitage.shell/master/$THIS"
+    green "  chmod +x $THIS"
+    green "  $THIS bootstrap $(sblue "# take a coffee...")  $(syellow "-> NEED TO HAVE INTERNET & GIT")"
+}
+
+usage() {
+    syellow "               --------------------"
+    syellow "               | MINITAGE  HELPER |"
+    syellow "               --------------------"
+    blue "$(sgreen $THIS ${script_usage}) to list commands"
+    log
+    usage_bootstrap
+    log
+    usage_deploy
+    log
+    usage_offlinedeploy
+    log
+    usage_snapshot
+    log
+    red "Upgrade minitage"
+    green "     $w/$THIS selfupgrade"
+    log
+    red "Launch cgwb"
+    green "     $w/$THIS cgwb"
+    log
+    red "$script_usage_intern"
+    warn "      Aadvanced/internal commands, see the code if you want to use them"
+
+}
+script_usage="usage"
+script_usage_self="bootstrap|selfupgrade"
+script_usage_deploy="deploy|offlinedeploy|snapshot"
+script_usage_intern="refresh|checkout_or_update|eggpush|mount|sync|push"
+short_usage() {
+    sgreen "$(sgreen Run )$(sblue "$0 ${script_usage} [command]")$(sgreen " for long help")"
+    sgreen "$0 $(syellow "Install: ") $(sred  ${script_usage_self})"
+    sgreen "$0 $(syellow "Deploy:")   $(sred  ${script_usage_deploy})"
+    sgreen "$0 $(syellow "Internal:") $(sred  ${script_usage_intern})"
+}
 case $command in
-    eggpush|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
+    eggpush|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
     mount) do_${command} ${COMMAND_ARGS};;
-    help|--help|-h|usage) usage ;;
-    *) green "$0 usage for long help";green $script_usage ;;
+    help|--help|-h|usage)
+        for i in ${COMMAND_ARGS};do
+            echo $i
+            if [[ $i == "snapshot" ]]  \
+               || [[ $i == "deploy" ]]\
+               || [[ $i == "offlinedeploy" ]]\
+               || [[ $i == "bootstrap" ]]\
+            ;then
+                short_usage
+                usage_$i
+                exit
+            fi
+        done
+        log
+        usage
+        ;;
+    *)
+        long_usage
+        ;;
 esac
 # vim:set et sts=4 ts=4 tw=80:
+
