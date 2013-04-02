@@ -44,6 +44,7 @@ buildout.minitagificator
 "
 minitage_eggs_core="
 minitage.paste
+minitage
 minitage.core
 "
 minitage_eggs="
@@ -211,9 +212,6 @@ deploy_minitage() {
 refresh() {
     if [[ -n ${SYNC} ]];then
         checkout_or_update
-    fi
-    if [[ -f "$w/.compiled_-virtualenv" ]];then
-        deploy_minitage skipdeps
     fi
 }
 install_minitage() {
@@ -527,14 +525,21 @@ do_mount(){
 breakp() {
     red "here";read
 }
-selfupgrade() {
-    local do_sync="$SYNC"  online="$ONLINE"
-    export ONLINE="y" SYNC="y"
-    refresh
+do_selfupgrade() {
+    if [[ -f "$w/.compiled_-virtualenv" ]];then
+        deploy_minitage skipdeps
+    fi
+    deploy
     install_plone_deps
     minimerge_wrapper -NRv cgwb
-    export SYNC="$do_sync" ONLINE="$online"
-    qpopd
+    if [[ -n ${COMMAND_ARGS} ]];then
+        deploy ${COMMAND_ARGS}
+    fi
+}
+selfupgrade() {
+    export ONLINE="y" SYNC="y"
+    refresh
+    ONLINE="y" SYNC="y" "$0" do_selfupgrade ${COMMAND_ARGS}
 
 }
 install_tool() {
@@ -634,7 +639,7 @@ usage() {
 }
 script_usage="$0 cgwb|selfupgrade|refresh|bootstrap|checkout_or_update|deploy|snapshot|eggpush|mount|sync|push"
 case $command in
-    eggpush|bootstrap|push|deploy|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
+    eggpush|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
     mount) do_${command} ${COMMAND_ARGS};;
     help|--help|-h|usage) usage ;;
     *) green "$0 usage for long help";green $script_usage ;;
