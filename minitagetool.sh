@@ -510,7 +510,9 @@ install_project() {
 
 fetch_initial_deps() {
     green "Fetch initial dependencies"
-    minimerge_wrapper -s
+    if [[ ! -e "$w/minilays/dependencies/zlib"* ]];then
+        minimerge_wrapper -s
+    fi
     minimerge_wrapper --fetchonly --only-dependencies all
 }
 
