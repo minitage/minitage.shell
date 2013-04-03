@@ -244,6 +244,7 @@ deploy_minitage() {
     install_minitage
     if [[ -n $ONLINE ]] && [[ -n ${SYNC} ]];then
         minimerge_wrapper -s
+        do_step fetch_initial_deps
     fi
     install_minitage_python
     if [[ -n $ONLINE ]];then
@@ -546,11 +547,6 @@ deploy() {
     fi
     $vdo_step install_virtualenv
     safe_check
-    if [[ -n ${ONLINE} ]];then
-        if [[ -n ${SYNC} ]];then
-            do_step fetch_initial_deps
-        fi
-    fi
     $mbase deploy_minitage
     $mbase install_plone_deps
     for i in ${cargs};do
