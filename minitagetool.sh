@@ -19,8 +19,17 @@ ARCHIVES_PATH="${ARCHIVES_PATH:-"$w/snapshots"}"
 COMMAND_ARGS=$@
 CGWB_MINILAY="https://github.com/collective/collective.generic.webbuilder-minilay.git"
 sync_path=${BASE_EGGS:-"${w}/host/home/kiorky/minitage/sources/"}
-GIT_URL="git@github.com:minitage"
+SSH_URL="git@github.com:minitage"
+GITP_URL="git://github.com/minitage"
+HTTPS_URL="https://github.com/minitage"
 HTTP_URL="http://github.com/minitage"
+GIT_URLS="
+    $SSH_URL
+    $GITP_URL
+    $HTTPS_URL
+    $HTTP_URL
+
+"
 sync_minpath=${BASE_EGGS:-"${w}/host/home/kiorky/minitage"}
 PYPATH="$w/tools/python"
 # search for old installs
@@ -635,6 +644,26 @@ install_tool() {
     ln -sf "$w/sources/minitage.shell/$THIS" "$w/bin/$THIS"
 }
 
+
+reorder_urls() {
+    local url="$1" good="$2" ret=""
+    shift;shift;
+    clone_urls="$@"
+    for i in $clone_urls;do
+        if [[ "$i" != "$url" ]];then
+            ret="$ret $i"
+        fi
+    done
+    # make this url the last tested
+    if [[ "${good}" == "0" ]];then
+        ret="$url $ret"
+    # make this url the first tested
+    else
+        ret="$ret $url"
+    fi
+    echo $ret
+}
+
 checkout_or_update() {
     green "Synchronnising minitage codebase"
     for d in sources eggs/cache;do
@@ -643,13 +672,54 @@ checkout_or_update() {
         fi
     done
     qpushd sources
+    local cl_u=$GIT_URLS
     for i in $(echo $minitage_eggs minitage.shell);do
+        local updated=""
         if [[ ! -d $i ]];then
-            git clone "${GIT_URL}/$i" || git clone "${HTTP_URL}/$i"
+            for urlt in ${cl_u};do
+                local url="${urlt}/$i.git"
+                log "Cloning $url"
+                git clone  "$url"
+                local ret="$?"
+                if [[ "$ret" == "0" ]];then
+                    updated="1"
+                    cl_u=$(reorder_urls $urlt 0 $cl_u)
+                    break
+                else
+                    cl_u=$(reorder_urls $urlt 1 $cl_u)
+                    rm -rf "$i"
+                fi
+            done
+            if [[ ! -d "$i" ]];then
+                die "cloning $i failed"
+            fi
+        else
+            qpushd "$i"
+            for urlt in "" ${cl_u};do
+                local url="${urlt}/$i.git" args=""
+                if [[ -n $urlt ]];then
+                    args="$url master"
+                    txt="Pulling from $url"
+                else
+                    args="origin master"
+                    txt="Pulling $i"
+                fi
+                log "$txt"
+                git pull $args
+                local ret="$?"
+                if [[ "$ret" == "0" ]];then
+                    cl_u=$(reorder_urls $urlt 0 $cl_u)
+                    updated="1"
+                    break
+                else
+                    cl_u=$(reorder_urls $urlt 1 $cl_u)
+                fi
+            done
+            qpopd
         fi
-        qpushd "$i"
-        git pull || die "problem updating $i"
-        qpopd
+        if [[ -z "$updated" ]];then
+            die "Clone/Pulling $i failed"
+        fi
     done
     qpopd
     if [[ -e "$w/bfg/cgwb" ]];then
@@ -669,14 +739,16 @@ boot_checkout_or_update() {
 }
 bootstrap() {
     green "Bootstrapping minitage"
-    local do_step="do_step"
-    for i in $@;do
+    local do_step="do_step" cargs=""
+    for i in ${COMMAND_ARGS};do
         if [[ $i == "sync" ]];then
             do_step=""
+        else
+            cargs="$cargs $i"
         fi
     done
     $do_step boot_checkout_or_update
-    ONLINE="TRUE" SYNC="TRUE" "$w/$THIS" deploy
+    ONLINE="TRUE" SYNC="TRUE" "$w/$THIS" deploy ${cargs}
 }
 
 usage_deploy() {
