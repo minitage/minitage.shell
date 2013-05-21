@@ -124,6 +124,7 @@ logs
 sources
 dependencies
 eggs
+snapshots
 host
 lib
 minilays
@@ -395,12 +396,15 @@ snapshot() {
             eggs_dirs="$eggs_dirs $i"
         fi
     done
-    local excl_regex="^(([^/])+/([^/])+/)(\$|bin|.*pyc|eggs"
+    local excl_regex="^("
+    excl_regex="${excl_regex}(snapshots[/])|"
+    excl_regex="${excl_regex}((([^/])+/([^/])+/)"
+    excl_regex="${excl_regex}(\$|bin|.*pyc|eggs"
     excl_regex="${excl_regex}|develop-eggs|parts|sys"
     excl_regex="${excl_regex}|var|__min.*|\.minitage"
     excl_regex="${excl_regex}|\.downloads|\.installed.cfg"
     excl_regex="${excl_regex}|\.mr\.developer.cfg"
-    excl_regex="${excl_regex}|var"
+    excl_regex="${excl_regex}|var))"
     excl_regex="${excl_regex})"
     local minilaysre="minilays/(dependencies|cgwb|eggs|plone)"
     local minilays=$(ls -d minilays/{dependencies,cgwb,eggs,plone})
