@@ -392,7 +392,7 @@ snapshot() {
     excl_regex="${excl_regex}|\.mr\.developer.cfg"
     excl_regex="${excl_regex}|var"
     excl_regex="${excl_regex})"
-    local minilays="minilays/(dependencies|cgwb|eggs|plone)"
+    local minilays="minilays/{dependencies|cgwb|eggs|plone}"
     find \
         dependencies/ \
         sources/ \
