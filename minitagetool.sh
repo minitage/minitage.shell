@@ -2,15 +2,25 @@
 LAUNCH_DIR=$PWD
 cd $(dirname $0)
 w=$PWD
+minsearch() {
+    local ret=$(ls -1d "${1}/sources/minitage."* 2>/dev/null)
+    echo $ret|head -n1
+}
 for i in "$w" "$w/.." "$w/../.." "$w/../../.." "$w/../../../..";do
-    if [[ -f     "${i}/bin/minimerge" ]]\
-        || [[ -e "${i}/minilays" ]]\
-        || [[ -e "${i}/eggs/cache" ]]\
-        || [[ -e "$(ls -1d "${i}/sources/minitage."*|head -n1)" ]];then
-    cd "$i"
-    w=$PWD
-    break
-fi
+    if [[ -e "${i}/minilays/dependencies" ]]\
+        && [[ -e "${i}/minilays/eggs" ]];then
+        cd "$i"
+        w=$PWD
+        break
+    else
+        if [[ -f     "${i}/bin/minimerge" ]]\
+            || [[ -e "${i}/eggs/cache" ]]\
+            || [[ -e "$(minsearch ${i})" ]] ;then
+            cd "$i"
+            w=$PWD
+            break
+        fi
+    fi
 done
 command=$1
 shift
@@ -392,7 +402,8 @@ snapshot() {
     excl_regex="${excl_regex}|\.mr\.developer.cfg"
     excl_regex="${excl_regex}|var"
     excl_regex="${excl_regex})"
-    local minilays="minilays/{dependencies|cgwb|eggs|plone}"
+    local minilaysre="minilays/(dependencies|cgwb|eggs|plone)"
+    local minilays=$(ls -d minilays/{dependencies,cgwb,eggs,plone})
     find \
         dependencies/ \
         sources/ \
@@ -414,8 +425,8 @@ snapshot() {
     find $projects_dirs minilays\
         $projects "$ignoref"\
         | egrep -v $excl_regex \
-        | egrep -v "${minilays}">>"$projects"
-    find $DOWNLOADS_DIR -type f >> "${download}"
+        | egrep -v ${minilaysre}>>"$projects"
+    find ${DOWNLOADS_DIR//${w}/.} -type f >> "${download}"
     find eggs/cache/ "$download" \
         | egrep -v "\.pyc" \
         | egrep -v "\.pyo" \
