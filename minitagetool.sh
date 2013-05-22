@@ -33,6 +33,7 @@ SSH_URL="git@github.com:minitage"
 GITP_URL="git://github.com/minitage"
 HTTPS_URL="https://github.com/minitage"
 HTTP_URL="http://github.com/minitage"
+DS="$w/eggs/cache/distribute_setup.py"
 GIT_URLS="
     $SSH_URL
     $GITP_URL
@@ -453,10 +454,23 @@ snapshot() {
     tar cjvf "$snapp" -T "$projects" -X "$ignoref"
     red "Produced $snapf $snapd $snapp"
 }
+find_ds() {
+    local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" "$w/downloads" "$w" -name distribute_setup.py 2>/dev/null|head -n1)
+    echo $ds
+}
 
 safe_check() {
     green "Safe check"
     local pypi=$(egrep "^127\.0\.0\.1.*pypi.python.org" /etc/hosts|wc -l)
+    local ds="$(find_ds)"
+    if [[ -z ${ONLINE} ]];then
+        if [[ ! -e "$ds" ]];then
+            die "distribute_setup.py not found"
+        fi
+        if [[ ! -e "$DS" ]];then
+            ln -sfv "$ds" "$DS"
+        fi
+    fi
     if [[ "$pypi" == "0" ]];then
         if [[ -z ${ONLINE} ]];then
             warn "Did you forget to add to /etc/hosts (<C-C> to abort, <enter to continue> :"
