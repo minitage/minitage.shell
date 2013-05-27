@@ -478,6 +478,9 @@ safe_check() {
     green "Safe check"
     local pypi=$(egrep "^127\.0\.0\.1.*pypi.python.org" /etc/hosts|wc -l)
     local ds="$(find_ds)"
+    if [[ ! -e $DOWNLOADS_DIR ]];then
+        mkdir -pv $DOWNLOADS_DIR
+    fi
     if [[ -z ${ONLINE} ]];then
         if [[ ! -e "$ds" ]];then
             die "distribute_setup.py not found"
