@@ -42,6 +42,7 @@ GIT_URLS="
 
 "
 sync_minpath=${BASE_EGGS:-"${w}/host/home/kiorky/minitage"}
+ez_mirror="http://python-distribute.org/distribute_setup.py"
 PYPATH="$w/tools/python"
 # search for old installs
 if [[ ! -e "$w/tools/" ]];then
@@ -244,7 +245,6 @@ install_virtualenv() {
     green "Making a new virtualenv"
     rm -rf "$w/bin" "$w/include"  "$w/lib"
     "$PYPATH/bin/virtualenv" --distribute --no-site-packages "$w" || die "virtualenv failed"
-    ln -sf "$w/minitagetools.sh" "$w/bin"
     install_minitage_deps
     install_tool
 }
@@ -455,7 +455,22 @@ snapshot() {
     red "Produced $snapf $snapd $snapp"
 }
 find_ds() {
-    local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" "$w/downloads" "$w" -name distribute_setup.py 2>/dev/null|head -n1)
+    local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
+    if [[ ! -e "$ds" ]];then
+        if [[ -z $OFFLINE  ]];then
+            $wget "$DS" "$ez_mirror"
+            local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
+        fi
+    fi
+    if [[ ! -e "$ds" ]];then
+        local ds=$(find  "$PYPATH/downloads"  -name distribute_setup.py 2>/dev/null|head -n1)
+    fi
+    if [[ ! -e "$ds" ]];then
+        local ds=$(find  "$w/downloads"  -name distribute_setup.py 2>/dev/null|head -n1)
+    fi
+    if [[ ! -e "$ds" ]];then
+        local ds=$(find "$w" -name distribute_setup.py 2>/dev/null|head -n1)
+    fi
     echo $ds
 }
 
