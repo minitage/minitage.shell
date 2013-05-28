@@ -385,13 +385,30 @@ snapshot() {
     echo > "$download"
     echo > "$projects"
     local projects_dirs=""
+    selected_projects=""
+    for i in $COMMAND_ARGS;do
+        if [[ -d $i ]];then
+            selected_projects="$selected_projects $i"
+        else
+            for j in $(ls $w);do
+                if [[ -d "$j/$i" ]];then
+                    selected_projects="$selected_projects $j/$i"
+                fi
+            done
+        fi
+    done
     for i in $(ls $w);do
         if [[ -d $i ]];then
             if [[ "$minitage_base_dirs" != *"$i"* ]];then
-                projects_dirs="$projects_dirs $i"
+                for j in $(ls -d "$i/"*);do
+                    if [[ "${selected_projects}" == *"$j"* ]];then
+                        projects_dirs="$projects_dirs $j"
+                    fi
+                done
             fi
         fi
     done
+    #echo "$selected_projects / $projects_dirs";exit -1
     local eggs_dirs=""
     for i in $(ls -d eggs/*);do
         if [[ $i != "eggs/cache"* ]];then
@@ -410,13 +427,22 @@ snapshot() {
     excl_regex="${excl_regex})"
     local minilaysre="minilays/(dependencies|cgwb|eggs|plone)"
     local minilays=$(ls -d minilays/{dependencies,cgwb,eggs,plone})
-    find \
-        dependencies/ \
-        sources/ \
-        $projects_dirs\
-        $eggs_dirs\
-        | egrep $excl_regex\
-        >>"$ignoref"
+    if [[ -n $selected_projects ]];then
+        find \
+            dependencies/ \
+            sources/ \
+            $projects_dirs\
+            $eggs_dirs\
+            | egrep $excl_regex\
+            >>"$ignoref"
+    else
+        find \
+            dependencies/ \
+            sources/ \
+            $eggs_dirs\
+            | egrep $excl_regex\
+            >>"$ignoref"
+    fi
     find eggs/cache\
         | grep  "linux-x86_64.egg" \
         >>"$ignoref"
@@ -428,10 +454,12 @@ snapshot() {
         $eggs_dirs\
         | egrep -v $excl_regex \
         >>"$f"
-    find $projects_dirs minilays\
-        $projects "$ignoref"\
-        | egrep -v $excl_regex \
-        | egrep -v ${minilaysre}>>"$projects"
+    if [[ -n $selected_projects ]];then
+        find $projects_dirs minilays\
+            $projects "$ignoref"\
+            | egrep -v $excl_regex \
+            | egrep -v ${minilaysre}>>"$projects"
+    fi
     find ${DOWNLOADS_DIR//${w}/.} -type f >> "${download}"
     find eggs/cache/ "$download" \
         | egrep -v "\.pyc" \
@@ -448,12 +476,23 @@ snapshot() {
     local snapf="${sbase}-base.tbz2"
     local snapd="${sbase}-downloads.tbz2"
     local snapp="${sbase}-projects.tbz2"
-    green "Archiving minitage in $snapf $snapd $snapp?"
+    local msg="Archiving minitage in $snapf $snapd"
+    if [[ -n $selected_projects ]];then
+        local msg="$msg $snapp"
+    fi
+    local msg="$msg ?"
+    green "$msg"
     warn "<C-C> to abort";read
     tar cjvf "$snapf" -T "$f" -X "$ignoref"
     tar cjvf "$snapd" -T "$download" -X "$ignoref"
-    tar cjvf "$snapp" -T "$projects" -X "$ignoref"
-    red "Produced $snapf $snapd $snapp"
+    if [[ -n $selected_projects ]];then
+        tar cjvf "$snapp" -T "$projects" -X "$ignoref"
+    fi
+    msg="Produced $snapf $snapd"
+    if [[ -n $selected_projects ]];then
+        msg="$msg $snapp"
+    fi
+    red $msg
 }
 find_ds() {
     local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
