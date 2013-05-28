@@ -286,6 +286,7 @@ to_cache() {
     install_in_cache "zc.buildout<2dev" "$1"
     install_in_cache "zc.buildout>2dev" "$1"
     rm -rvf "$w/eggs/cache/"*minitag*link \
+        "$w/eggs/cache/"*minitag*egg \
         "$DOWNLOADS_DIR/dist/"*minitag* \
         "$DOWNLOADS_DIR/minitage/eggs/"*minitag*
     for i in $minitage_eggs;do
