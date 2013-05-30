@@ -842,6 +842,14 @@ bootstrap() {
 
 offlinebootstrap() {
     green "Running $THIS in offline mode"
+    local do_step="do_step" cargs=""
+    for i in ${COMMAND_ARGS};do
+        if [[ $i == "sync" ]];then
+            do_step=""
+        else
+            cargs="$cargs $i"
+        fi
+    done
     install_tool
     ONLINE="n" SYNC="" "$w/$THIS" deploy
     ONLINE="n" SYNC="" "$w/$THIS" deploy_minitage
