@@ -59,7 +59,11 @@ for i in $(ls -drt $(for j in $PYPATHS;do echo "$j"/*;done) 2>/dev/null);do
     fi
 done
 PYB="$w/sources/minitage.shell/PyBootstrapper.sh"
-ONLINE="${ONLINE:-"y"}"
+if [[ "$ONLINE" == "n" ]];then
+    ONLINE=""
+else
+    ONLINE="y"
+fi
 SYNC="$SYNC:-""}"
 MINITAGE_DEPS="
 iniparse
@@ -497,7 +501,7 @@ snapshot() {
 find_ds() {
     local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
     if [[ ! -e "$ds" ]];then
-        if [[ -z $OFFLINE  ]];then
+        if [[ -n $ONLINE  ]];then
             $wget "$DS" "$ez_mirror"
             local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
         fi
@@ -614,7 +618,7 @@ have_python() {
 }
 
 offlinedeploy() {
-    green "Running $THIS is offline mode"
+    green "Running $THIS in offline mode"
     ONLINE="" deploy $@
 }
 
@@ -778,7 +782,7 @@ checkout_or_update() {
             if [[ ! -d "$i" ]];then
                 die "cloning $i failed"
             fi
-        else
+        elif [[ -n $ONLINE ]];then
             qpushd "$i"
             for urlt in "" ${cl_u};do
                 local url="${urlt}/$i.git" args=""
@@ -836,6 +840,14 @@ bootstrap() {
     ONLINE="TRUE" SYNC="TRUE" "$w/$THIS" deploy ${cargs}
 }
 
+offlinebootstrap() {
+    green "Running $THIS in offline mode"
+    install_tool
+    ONLINE="n" SYNC="" "$w/$THIS" deploy
+    ONLINE="n" SYNC="" "$w/$THIS" deploy_minitage
+    ONLINE="n" SYNC="" "$w/$THIS" deploy ${cargs}
+}
+
 usage_deploy() {
     red "Installing your a project $(syellow "-> NEED TO HAVE INTERNET & GIT")"
     green "  cd minitage/minilays && git clone minilay"
@@ -845,6 +857,11 @@ usage_deploy() {
 usage_offlinedeploy() {
     red "Installing your a project without internet (need either extracted snapshots or archive dependencies in $w/downloads)"
     green "  $w/$THIS offlinedeploy <project minibuild>"
+}
+
+usage_offlinebootstrap() {
+    red "Reinstalling minitage packages & projects  after an upgrade for tarballs"
+    green "  $w/$THIS offlinebootstrap <project minibuild>"
 }
 
 usage_snapshot() {
@@ -894,6 +911,8 @@ usage() {
     log
     usage_offlinedeploy
     log
+    usage_offlinebootstrap
+    log
     usage_snapshot
     log
     usage_selfupgrade
@@ -905,7 +924,7 @@ usage() {
 
 }
 script_usage="usage"
-script_usage_self="bootstrap|selfupgrade"
+script_usage_self="bootstrap|selfupgrade|offlinebootstrap"
 script_usage_deploy="deploy|offlinedeploy|snapshot|cgwb"
 script_usage_intern="refresh|checkout_or_update|eggpush|mount|sync|push"
 short_usage() {
@@ -917,9 +936,9 @@ short_usage() {
     sgreen "$0 $(syellow "Use:      ")$(sred  ${script_usage_deploy})"
     sgreen "$0 $(syellow "Internal: ")$(sred  ${script_usage_intern})"
 }
-help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb"
+help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb offlinebootstrap"
 case $command in
-    eggpush|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
+    deploy_minitage|eggpush|offlinebootstrap|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
     mount) do_${command} ${COMMAND_ARGS};;
     help|--help|-h|usage)
         for i in ${COMMAND_ARGS};do
