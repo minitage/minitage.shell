@@ -643,7 +643,7 @@ deploy() {
     configure_buildout
     # if python has gone, just redo projects
     if [[ -z "$(have_python)" ]];then
-        $vdo_step boot_checkout_or_update
+        do_step boot_checkout_or_update
     fi
     if [[ -z "$(have_python)" ]];then
         install_pyboostrap
