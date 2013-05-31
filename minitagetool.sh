@@ -639,12 +639,13 @@ offlinedeploy() {
 deploy() {
     green "Running deploy procedure"
     local cargs="${@:-"${COMMAND_ARGS}"}"
-    local vdo_step="do_step" mbase="do_step"
+    local vdo_step="do_step" mbase="do_step" bdo_step="do_step"
     configure_buildout
     # if python has gone, just redo projects
     if [[ -z "$(have_python)" ]];then
-        do_step boot_checkout_or_update
+        bdo_step=""
     fi
+    $bdo_step boot_checkout_or_update
     if [[ -z "$(have_python)" ]];then
         install_pyboostrap
         vdo_step=""
