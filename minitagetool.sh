@@ -362,16 +362,30 @@ install_minitage_deps() {
     done
 }
 
-do_step() {
-    local sdone="$w/.compiled_"
+get_step_marker() {
+    local sdone="$w/.compiled_" sdonem="$sdone"
     for i in $@;do
         sdone="${sdone}-${i}"
     done
-    if [[ ! -f $sdone ]];then
+    if [[ "$sdone" != "$sdonem" ]];then
+        echo $sdone
+    fi
+}
+
+is_done() {
+    marker="$(get_step_marker $@)"
+    if [[ -f "$marker" ]];then
+        echo done
+    fi
+}
+
+do_step() {
+    local marker="$(get_step_marker $@)"
+    if [[ ! -f $marker ]];then
         green "run: $1"
-        "$1" && touch $sdone
+        "$1" && touch $marker
     else
-        warn "$1 is already done (delete '$sdone' to redo)."
+        warn "$1 is already done (delete '$marker' to redo)."
     fi
 }
 
@@ -638,6 +652,7 @@ deploy() {
     if [[ ! -f "$w/bin/minimerge" ]];then
         mbase=""
     fi
+    $do_step boot_checkout_or_update
     $vdo_step install_virtualenv
     safe_check
     $mbase deploy_minitage
