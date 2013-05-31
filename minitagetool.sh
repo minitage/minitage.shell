@@ -855,7 +855,7 @@ bootstrap() {
     ONLINE="TRUE" SYNC="TRUE" "$w/$THIS" deploy ${cargs}
 }
 
-offlinebootstrap() {
+offlineupgrade() {
     green "Running $THIS in offline mode"
     local do_step="do_step" cargs=""
     for i in ${COMMAND_ARGS};do
@@ -882,9 +882,9 @@ usage_offlinedeploy() {
     green "  $w/$THIS offlinedeploy <project minibuild>"
 }
 
-usage_offlinebootstrap() {
+usage_offlineupgrade() {
     red "Reinstalling minitage packages & projects  after an upgrade for tarballs"
-    green "  $w/$THIS offlinebootstrap <project minibuild>"
+    green "  $w/$THIS offlineupgrade <project minibuild>"
 }
 
 usage_snapshot() {
@@ -934,7 +934,7 @@ usage() {
     log
     usage_offlinedeploy
     log
-    usage_offlinebootstrap
+    usage_offlineupgrade
     log
     usage_snapshot
     log
@@ -947,7 +947,7 @@ usage() {
 
 }
 script_usage="usage"
-script_usage_self="bootstrap|selfupgrade|offlinebootstrap"
+script_usage_self="bootstrap|selfupgrade|offlineupgrade"
 script_usage_deploy="deploy|offlinedeploy|snapshot|cgwb"
 script_usage_intern="refresh|checkout_or_update|eggpush|mount|sync|push"
 short_usage() {
@@ -959,9 +959,9 @@ short_usage() {
     sgreen "$0 $(syellow "Use:      ")$(sred  ${script_usage_deploy})"
     sgreen "$0 $(syellow "Internal: ")$(sred  ${script_usage_intern})"
 }
-help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb offlinebootstrap"
+help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb offlineupgrade"
 case $command in
-    deploy_minitage|eggpush|offlinebootstrap|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
+    deploy_minitage|eggpush|offlineupgrade|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
     mount) do_${command} ${COMMAND_ARGS};;
     help|--help|-h|usage)
         for i in ${COMMAND_ARGS};do
