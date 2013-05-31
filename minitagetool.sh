@@ -643,6 +643,9 @@ deploy() {
     configure_buildout
     # if python has gone, just redo projects
     if [[ -z "$(have_python)" ]];then
+        $vdo_step boot_checkout_or_update
+    fi
+    if [[ -z "$(have_python)" ]];then
         install_pyboostrap
         vdo_step=""
     fi
@@ -652,7 +655,6 @@ deploy() {
     if [[ ! -f "$w/bin/minimerge" ]];then
         mbase=""
     fi
-    $vdo_step boot_checkout_or_update
     $vdo_step install_virtualenv
     safe_check
     $mbase deploy_minitage
