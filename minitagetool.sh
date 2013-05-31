@@ -141,9 +141,18 @@ fl="$fl $DOWNLOADS_DIR/dist"
 fl="$fl $DOWNLOADS_DIR/minitage/eggs"
 fl="$fl $w/eggs/cache"
 if [[ -f $(which gsed 2>&1) ]];then
-SED="$(which gsed)"
+    SED="$(which gsed)"
+elif [[ $(uname) == "Darwin" ]];then
+    SED="$(which sed)"
 else
     SED="$(which sed)"
+fi
+if [[ $(uname) == "Darwin" ]];then
+    SED_RE="$SED -E"
+    SED_IRE="$SED -iE"
+else
+    SED_RE="$SED -re"
+    SED_IRE="$SED -ire"
 fi
 GREEN=$'\e[32;01m'
 YELLOW=$'\e[33;01m'
@@ -218,12 +227,12 @@ download-directory = $DOWNLOADS_DIR
 download-cache =     $DOWNLOADS_DIR
 EOF
 else
-    "${SED}" -re \
+    ${SED_IRE}\
         "s:^download-directory.*:download-directory=${DOWNLOADS_DIR}:g" \
-        -i "$dcfg"
-    "${SED}" -re \
+        "$dcfg"
+    ${SED_IRE} \
         "s:^download-cache.*:download-cache=${DOWNLOADS_DIR}:g" \
-        -i "$dcfg"
+        "$dcfg"
     nb=$(grep  $DOWNLOADS_DIR "$dcfg" | wc -l)
     if [[ "$nb" == "0" ]];then
         cat >> "$dcfg" << EOF

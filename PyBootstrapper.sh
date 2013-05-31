@@ -36,11 +36,19 @@ elif [[ -f $(which wget) ]];then
     wget="$(which wget)  -c -O"
 fi
 
-
 if [[ -f $(which gsed 2>&1) ]];then
-SED="$(which gsed)"
+    SED="$(which gsed)"
+elif [[ $(uname) == "Darwin" ]];then
+    SED="$(which sed)"
 else
     SED="$(which sed)"
+fi
+if [[ $(uname) == "Darwin" ]];then
+    SED_RE="$SED -E"
+    SED_IRE="$SED -iE"
+else
+    SED_RE="$SED -re"
+    SED_IRE="$SED -ire"
 fi
 
 #gentoo_mirror="ftp://gentoo.imj.fr/pub"
@@ -69,8 +77,8 @@ python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
 python25_md5="394a5f56a5ce811fb0f023197ec0833e"
 python26_mirror="http://python.org/ftp/python/2.6.6/Python-2.6.6.tar.bz2"
 python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
-python27_mirror="http://python.org/ftp/python/2.7.3/Python-2.7.3.tar.bz2"
-python27_md5="c57477edd6d18bd9eeca2f21add73919"
+python27_mirror="http://python.org/ftp/python/2.7.5/Python-2.7.5.tar.bz2"
+python27_md5="6334b666b7ff2038c761d7b27ba699c1"
 python_mirror="$python27_mirror"
 python_md5="$python27_md5"
 
@@ -252,7 +260,7 @@ cmmi() {
 # $1: URL
 give_filename_from_url() {
     local arg=$1
-    local url="$(echo "$arg" |"$SED" -re "s:^((http|ftp)\://.*/)([^/]*)(/*)$:\3:g")"
+    local url="$(echo "$arg" |$SED_RE "s:^((http|ftp)\://.*/)([^/]*)(/*)$:\3:g")"
     if [[ -z "$url" ]];then
         die "Failed to get filename from $arg"
     else
@@ -268,24 +276,25 @@ compile_bz2() {
     tar xzvf "$myfullpath" -C .
     cd *
     set_mac_target
-    if [[ $UNAME == 'Darwin' ]];then
-        download "$bz2_darwinpatch" "$bz2_darwinpatch_md5" "bz2darwin.patch";
-        patch="${LAST_DOWNLOADED_FILE}"
-        sed "s|__MacPorts_Compatibility_Version__|1.0|"  $patch\
-            | sed "s|__MacPorts_Version__|1.0.4|"\
-            | patch -p0
-    fi
     red "Compiling bzip2"
     make CFLAGS="$bz2_cflags"
     make install PREFIX="$prefix" || die "make install failed"
     # the libbz2 shared library
 
-    if [[ $UNAME != 'Darwin' ]];then
-        make  -f Makefile-libbz2_so all || die "Make failed libbz2"
+    if [[ $UNAME == 'Darwin' ]];then
+        $SED_IRE "s/-soname/-compatibility_version,1.0 -Wl,-current_version,1.0.6 -Wl,-install_name/g" Makefile-libbz2_so
+        $SED_IRE "s/libbz2.so.1.0.6/libbz2.1.0.6.dylib/g" Makefile-libbz2_so
+        $SED_IRE "s/libbz2.so.1.0/libbz2.1.0.dylib/g" Makefile-libbz2_so
     fi
-    for i in libbz2.so.* libbz2.a ;do
+    make  -f Makefile-libbz2_so all || die "Make failed libbz2"
+    for i in libbz2*dylib libbz2.so.* libbz2.a ;do
         if [[  -e "$i" ]];then
             cp "$i" "$prefix/lib" || die "shared librairies installation failed"
+        fi
+    done
+    for i in libbz2.so.* libbz2.*.dylib;do
+        if [[ -e "$i" ]];then
+            ln -sfv "$i" "$prefix/lib/libbz2.so"
         fi
     done
     cp bzlib.h "$prefix/include" || die "shared include installation failed"
@@ -357,13 +366,14 @@ compile_openssl(){
     fi
     if [[ $UNAME == 'Darwin' ]];then
         ldflags="$ldflags  -mmacosx-version-min=10.5.0"
-        if [[ $(uname -r|cut -c1-3  ) == "10." ]];then
+        $(uname -r|cut -c1-3  )
+        if [[ $(uname -r|$SED_RE "s/[1-9][0-9].[0-9]+.[0-9]+/match/g") == "match" ]];then
             platform="darwin64-x86_64-cc"
         fi
         sconfigure="./Configure"
     fi
     if [[ $UNAME == 'Darwin' ]];then
-        $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" shared no-fips "$platform" $ldflags
+        $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" zlib-dynamic shared no-fips "$platform" enable-ec_nistp_64_gcc_128 $ldflags
     else
         $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" shared $ldflags no-fips  "$platform"
     fi
@@ -444,7 +454,7 @@ installorupgrade_setuptools(){
         local dist="$(find "$download_dir" -name distribute*z|head -n1)"
     fi
     qpopd
-    res=$(echo $res|$SED -re "s/.*(-U\s*distribute).*/reinstall/g")
+    res=$(echo $res|$SED_RE "s/.*(-U\s*distribute).*/reinstall/g")
     if [[ "$res" == "reinstall" ]];then
        "$python" "$myfullpath" -U Distribute
     fi
