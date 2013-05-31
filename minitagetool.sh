@@ -652,7 +652,7 @@ deploy() {
     if [[ ! -f "$w/bin/minimerge" ]];then
         mbase=""
     fi
-    $do_step boot_checkout_or_update
+    $vdo_step boot_checkout_or_update
     $vdo_step install_virtualenv
     safe_check
     $mbase deploy_minitage
