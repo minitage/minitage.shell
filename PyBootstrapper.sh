@@ -373,7 +373,7 @@ compile_openssl(){
         sconfigure="./Configure"
     fi
     if [[ $UNAME == 'Darwin' ]];then
-        $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" zlib-dynamic shared no-fips "$platform" enable-ec_nistp_64_gcc_128 $ldflags
+        $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" shared no-fips "$platform" enable-ec_nistp_64_gcc_128 $ldflags
     else
         $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" shared $ldflags no-fips  "$platform"
     fi
