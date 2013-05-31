@@ -800,8 +800,11 @@ checkout_or_update() {
         elif [[ -n $ONLINE ]];then
             qpushd "$i"
             for urlt in "" ${cl_u};do
-                local url="${urlt}/$i.git" args=""
+                local url="" args=""
                 if [[ -n $urlt ]];then
+                    url="${urlt}/$i.git"
+                fi
+                if [[ -n $url ]];then
                     args="$url master"
                     txt="Pulling from $url"
                 else
@@ -809,9 +812,13 @@ checkout_or_update() {
                     txt="Pulling $i"
                 fi
                 log "$txt"
-                git pull $args
+                git pull $args 
                 local ret="$?"
                 if [[ "$ret" == "0" ]];then
+                    if [[ -n $url ]];then
+                        warn "Setting remote to $url"
+                        git remote set-url origin "$url"
+                    fi
                     cl_u=$(reorder_urls $urlt 0 $cl_u)
                     updated="1"
                     break
