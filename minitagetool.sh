@@ -613,7 +613,7 @@ install_cgwb() {
 }
 
 install_project() {
-    green "Installing project :$1"
+    green "Installing project : $1"
     minimerge_wrapper --only-dependencies $i
     minimerge_wrapper -NE $1
     minimerge_wrapper -aNRv $i
