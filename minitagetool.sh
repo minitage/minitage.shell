@@ -272,9 +272,6 @@ deploy_minitage() {
         do_step fetch_initial_deps
     fi
     install_minitage_python
-    if [[ -n $ONLINE ]];then
-        install_cgwb
-    fi
 }
 
 refresh() {
@@ -712,10 +709,15 @@ sync() {
     done
     SKIPCHECKOUTS="y" selfupgrade
 }
+install_cgwb_wrapper() {
+    if [[ -n $ONLINE ]];then
+        install_cgwb
+    fi
+}
 
 cgwb() {
+    do_step install_cgwb_wrapper    
     green "Launching cgwb"
-    minimerge_wrapper cgwb
     cd "$w/bfg/cgwb"
     ./l.sh
 }
