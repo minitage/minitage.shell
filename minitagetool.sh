@@ -757,6 +757,7 @@ install_tool() {
     fi
     ln -sf "$w/sources/minitage.shell/$THIS" "$w/$THIS"
     ln -sf "$w/sources/minitage.shell/$THIS" "$w/bin/$THIS"
+    ln -sf "$w/sources/minitage.shell/minitage-git.sh" "$w/bin/minitage-git.sh"
 }
 
 
