@@ -483,7 +483,7 @@ snapshot() {
     find eggs/cache\
         | grep  "linux-x86_64.egg" \
         >>"$ignoref"
-    find \
+    find  \
         dependencies/ \
         sources/ \
         bfg/cgwb \
@@ -491,6 +491,7 @@ snapshot() {
         $eggs_dirs\
         | egrep -v $excl_regex \
         >>"$f"
+    echo eggs/pil-1.1.7/.downloads >> "$f"
     if [[ -n $selected_projects ]];then
         find $projects_dirs minilays\
             $projects "$ignoref"\
