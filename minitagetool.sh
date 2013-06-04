@@ -58,6 +58,8 @@ for i in $(ls -drt $(for j in $PYPATHS;do echo "$j"/*;done) 2>/dev/null);do
         break
     fi
 done
+UNAME=$(uname)
+UNAME_R=$(uname -r)
 PYB="$w/sources/minitage.shell/PyBootstrapper.sh"
 if [[ "$ONLINE" == "n" ]];then
     ONLINE=""
@@ -135,6 +137,7 @@ host
 lib
 minilays
 tools"
+
 # pretty term colors
 DOWNLOADS_DIR="$w/downloads"
 fl="$fl $DOWNLOADS_DIR/dist"
@@ -198,6 +201,16 @@ elif [[ -f $(which curl 2>&1) ]];then
 elif [[ -f $(which wget) ]];then
     wget="$(which wget)  -c -O"
 fi
+
+add_paths() {
+    if [[ "$UNAME" == "Darwin" ]];then
+        if  [[ ! "$PATH" == */usr/X11/bin* ]];then
+            syellow "adding /usr/X11/bin to path"
+            export PATH=$PATH:/usr/X11/bin
+        fi
+    fi
+}
+add_paths
 
 qpushd() {
     pushd "$1" 2>&1 >> /dev/null

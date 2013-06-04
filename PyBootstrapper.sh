@@ -15,6 +15,8 @@ version="1.0"
 offline=""
 
 UNAME="$(uname)"
+UNAME_R=$(uname -r)
+
 
 MD5SUM="$(which md5sum)"
 if [[ -f $(which md5 2>/dev/null) ]];then
@@ -135,7 +137,15 @@ qpushd() {
 qpopd() {
     popd    2>&1 >> /dev/null
 }
-
+add_paths() {
+    if [[ "$UNAME" == "Darwin" ]];then
+        if  [[ ! "$PATH" == */usr/X11/bin* ]];then
+            syellow "adding /usr/X11/bin to path"
+            export PATH=$PATH:/usr/X11/bin
+        fi
+    fi
+}
+add_paths
 check_md5() {
     if [[ "$md5" != "$file_md5" ]];then
         warn "md5 for $myfullpath failed : $md5 != $file_md5 !"
