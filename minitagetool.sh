@@ -530,7 +530,10 @@ snapshot() {
     if [[ -n $selected_projects ]];then
         tar cjvf "$snapp" -T "$projects" -X "$ignoref"
     fi
-    msg="Produced $snapf $snapd"
+    msg="Produced $snapf"
+    if [[ -z $NODOWNLOAD ]];then
+        msg="$msg $snapd"
+    fi
     if [[ -n $selected_projects ]];then
         msg="$msg $snapp"
     fi
