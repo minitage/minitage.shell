@@ -513,7 +513,10 @@ snapshot() {
     local snapf="${sbase}-base.tbz2"
     local snapd="${sbase}-downloads.tbz2"
     local snapp="${sbase}-projects.tbz2"
-    local msg="Archiving minitage in $snapf $snapd"
+    local msg="Archiving minitage in $snapf"
+    if [[ -z $NODOWNLOAD ]];then
+        local msg="$msg $snapd"
+    fi
     if [[ -n $selected_projects ]];then
         local msg="$msg $snapp"
     fi
@@ -521,7 +524,9 @@ snapshot() {
     green "$msg"
     warn "<C-C> to abort";read
     tar cjvf "$snapf" -T "$f" -X "$ignoref"
-    tar cjvf "$snapd" -T "$download" -X "$ignoref"
+    if [[ -z $NODOWNLOAD ]];then
+        tar cjvf "$snapd" -T "$download" -X "$ignoref"
+    fi
     if [[ -n $selected_projects ]];then
         tar cjvf "$snapp" -T "$projects" -X "$ignoref"
     fi
