@@ -859,7 +859,11 @@ checkout_or_update() {
             qpopd
         fi
         if [[ -z "$updated" ]];then
-            die "Clone/Pulling $i failed"
+            if [[ -z "$ONLINE" ]];then
+                if [[ ! -d "$w/sources/$i" ]];then
+                    die "Clone/Pulling $i failed"
+                fi
+            fi
         fi
     done
     qpopd
