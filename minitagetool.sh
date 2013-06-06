@@ -483,7 +483,7 @@ snapshot() {
     find eggs/cache\
         | grep  "linux-x86_64.egg" \
         >>"$ignoref"
-    find \
+    find  \
         dependencies/ \
         sources/ \
         bfg/cgwb \
@@ -491,6 +491,7 @@ snapshot() {
         $eggs_dirs\
         | egrep -v $excl_regex \
         >>"$f"
+    echo eggs/pil-1.1.7/.downloads >> "$f"
     if [[ -n $selected_projects ]];then
         find $projects_dirs minilays\
             $projects "$ignoref"\
@@ -513,7 +514,10 @@ snapshot() {
     local snapf="${sbase}-base.tbz2"
     local snapd="${sbase}-downloads.tbz2"
     local snapp="${sbase}-projects.tbz2"
-    local msg="Archiving minitage in $snapf $snapd"
+    local msg="Archiving minitage in $snapf"
+    if [[ -z $NODOWNLOAD ]];then
+        local msg="$msg $snapd"
+    fi
     if [[ -n $selected_projects ]];then
         local msg="$msg $snapp"
     fi
@@ -521,11 +525,16 @@ snapshot() {
     green "$msg"
     warn "<C-C> to abort";read
     tar cjvf "$snapf" -T "$f" -X "$ignoref"
-    tar cjvf "$snapd" -T "$download" -X "$ignoref"
+    if [[ -z $NODOWNLOAD ]];then
+        tar cjvf "$snapd" -T "$download" -X "$ignoref"
+    fi
     if [[ -n $selected_projects ]];then
         tar cjvf "$snapp" -T "$projects" -X "$ignoref"
     fi
-    msg="Produced $snapf $snapd"
+    msg="Produced $snapf"
+    if [[ -z $NODOWNLOAD ]];then
+        msg="$msg $snapd"
+    fi
     if [[ -n $selected_projects ]];then
         msg="$msg $snapp"
     fi
@@ -854,7 +863,11 @@ checkout_or_update() {
             qpopd
         fi
         if [[ -z "$updated" ]];then
-            die "Clone/Pulling $i failed"
+            if [[ -n "$ONLINE" ]];then
+                if [[ ! -d "$w/sources/$i" ]];then
+                    die "Clone/Pulling $i failed"
+                fi
+            fi
         fi
     done
     qpopd
