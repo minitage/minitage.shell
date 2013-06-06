@@ -584,7 +584,7 @@ install_plone_deps() {
     cp "$w/dependencies/zlib-1.2/bootstrap.py" "$w/zope/plone"
     cat > "$w/minilays/plone/plone" << EOF
 [minibuild]
-dependencies= libxml2-2.7 libxslt-1.1 py-libxml2-2.7 py-libxslt-1.1 pil-1.1.7 libiconv-1.12 python-2.7 git-1.7 subversion-1.7 openldap-2.4
+dependencies= libxml2-2.7 libxslt-1.1 py-libxml2-2.7 py-libxslt-1.1 pil-1.1.7 libiconv-1.12 python-2.7 git-1 subversion-1.7 openldap-2.4
 install_method=buildout
 src_uri=/dev/null
 src_type=git
