@@ -334,12 +334,15 @@ die() {
 }
 
 ez_offline() {
-    local egg="$1" pyprefix="${2:-$w}" ez=""
-    ez="$(ls $pyprefix/bin/easy_install*|tail -n1)"
+    local egg="$1" pyprefix="${2:-$w}"
+    local py=$pyprefix/bin/python
+    if [[ ! -e $py ]];then
+        py=$pyprefix/bin/python2.7
+    fi
     if [[ -n $ONLINE ]];then
-        "$ez" -f "$fl" "$egg" || die "easy install(online) failed for egg"
+        "$py" -c 'print "doo":from setuptools.command.easy_install import main; main()' -f "$fl" "$egg" || die "easy install(online) failed for egg $egg"
     else
-        "$ez" -H None -f "$fl" "$egg" || die "easy install (offline) failed for egg"
+        "$py" -c 'from setuptools.command.easy_install import main; main()' "$ez" -H None -f "$fl" "$egg" || die "easy install (offline) failed for egg $egg"
     fi
 }
 
@@ -710,9 +713,16 @@ offlinedeploy() {
 ensure_last_distribute() {
     # upgrade to last distribute>0.7 if online
     for pypath in $PYPATH $w;do
-        atest="$("$pypath/bin/easy_install" --version|awk '{print $2}'|sed -re "s/0.6.*/match/")"
+        local py=$pypath/bin/python
+        if [[ ! -e $py ]];then
+            py=$pypath/bin/python2.7
+        fi
+        atest="$("$py" -c 'import pkg_resources;print pkg_resources.get_distribution("distribute").version' &2>/dev/null|sed -re "s/0.6.*/match/")"
+        if [[ -z $atest ]];then
+            atest="match"
+        fi
         if [[  "$atest" == "match" ]];then
-            red "Upgrading distribute in $pypath"
+            red "Upgrading setuptools/distribute in $pypath"
             if [[ "$pypath" == "$w" ]];then
                 cp  -rfv\
                     "$DOWNLOADS_DIR/minitage/distribute"* \

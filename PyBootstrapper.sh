@@ -32,10 +32,10 @@ if [[ $(uname) == "FreeBSD" ]];then
         wget="$(which fetch) -pra -o"
     fi
 #another macosx hack
+elif [[ -f $(which wget) ]];then
+    wget="$(which wget) --no-check-certificate  -c -O"
 elif [[ -f $(which curl 2>&1) ]];then
     wget="$(which curl) -a -o"
-elif [[ -f $(which wget) ]];then
-    wget="$(which wget)  -c -O"
 fi
 
 if [[ -f $(which gsed 2>&1) ]];then
@@ -97,7 +97,7 @@ ez_md5=""
 
 virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.9.1.tar.gz"
 virtualenv_md5="07e09df0adfca0b2d487e39a4bf2270a"
-distribute_mirror="https://bitbucket.org/pypa/setuptools/downloads/distribute-0.7.zip"
+distribute_mirror="https://downloads.sourceforge.net/project/minitage/distribute-0.7.zip"
 distribute_md5="888cca5a77bdc65f4ca43cb67a3ed50b"
 
 hg_mirror="http://hg.intevation.org/files/mercurial-1.0.tar.gz"
@@ -436,6 +436,7 @@ compile_pythoni(){
         echo "#define   SETPGRP_HAVE_ARG 1">> pyconfig.h
         echo >> pyconfig.h
     fi
+    rm -rf "$prefix/lib/libpython"*
     make || die "python compilation failed"
     make install || die "python install failed"
     unset CFLAGS CPPFLAGS LDFLAGS OPT LD_RUN_PATH
@@ -444,11 +445,24 @@ compile_pythoni(){
 ez_offline() {
     egg="$1"
     ez="$(ls $prefix/bin/easy_install*|tail -n1)"
-    "$ez" -H None -f "$download_dir" "$egg" || die "easy install failed for egg"
+    local py=$prefix/bin/python
+    if [[ ! -e $py ]];then
+        py=$prefix/bin/python2.7
+    fi
+    "$py" -c 'from setuptools.command.easy_install import main; main()' \
+            -H None -f "$download_dir" "$egg" || die "easy install failed for egg $egg"
+    #"$ez" -H None -f "$download_dir" "$egg" || die "easy install failed for egg $egg"
 }
 
+install_distribute(){
+    if [[ -f "$prefix/bin/easy_install" ]];then
+        download "$distribute_mirror" "$distribute_md5"
+        ez_offline "distribute>=0.7" || if [[ "$1" == "1" ]];then die "install distribute faild";fi
+    fi
+}
 installorupgrade_setuptools_ng(){
     red "installing setuptools & virtualenv"
+    install_distribute # first can fail
     download "$ez_mirror" NOCHECK "$myfullpath"
     local myfullpath="${LAST_DOWNLOADED_FILE}"
     local extra_args=""
@@ -460,9 +474,8 @@ installorupgrade_setuptools_ng(){
     red "$python" "$myfullpath" $extra_args
     res=$("$python" "$myfullpath" $extra_args)
     qpopd
+    install_distribute
     download "$virtualenv_mirror" "$virtualenv_md5"
-    download "$distribute_mirror" "$distribute_md5"
-    ez_offline "distribute>=0.7" || die "distribute installation failed"
     ez_offline "VirtualEnv" || die "VirtualEnv installation failed"
 }
 
