@@ -711,7 +711,6 @@ ensure_last_distribute() {
     # upgrade to last distribute>0.7 if online
     for pypath in $PYPATH $w;do
         atest="$("$pypath/bin/easy_install" --version|awk '{print $2}'|sed -re "s/0.6.*/match/")"
-        atest='match'
         if [[  "$atest" == "match" ]];then
             red "Upgrading distribute in $pypath"
             if [[ "$pypath" == "$w" ]];then
