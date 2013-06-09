@@ -34,6 +34,7 @@ GITP_URL="git://github.com/minitage"
 HTTPS_URL="https://github.com/minitage"
 HTTP_URL="http://github.com/minitage"
 DS="$w/eggs/cache/distribute_setup.py"
+SS="$w/eggs/cache/ez_setup.py"
 GIT_URLS="
     $SSH_URL
     $GITP_URL
@@ -43,6 +44,7 @@ GIT_URLS="
 "
 sync_minpath=${BASE_EGGS:-"${w}/host/home/kiorky/minitage"}
 ez_mirror="http://python-distribute.org/distribute_setup.py"
+sez_mirror="https://bitbucket.org/pypa/setuptools/raw/0.7.2/ez_setup.py"
 PYPATH="$w/tools/python"
 # search for old installs
 if [[ ! -e "$w/tools/" ]];then
@@ -140,6 +142,7 @@ tools"
 
 # pretty term colors
 DOWNLOADS_DIR="$w/downloads"
+fl="$fl $DOWNLOADS_DIR/minitage"
 fl="$fl $DOWNLOADS_DIR/dist"
 fl="$fl $DOWNLOADS_DIR/minitage/eggs"
 fl="$fl $w/eggs/cache"
@@ -544,6 +547,31 @@ snapshot() {
 download_ez() {
     $wget "$DS" "$ez_mirror"
 }
+
+download_sez() {
+    $wget "$SS" "$sez_mirror"
+}
+
+find_ss() {
+    local ss=$(find "$DS" "$w/downloads/minitage/ez_setup.py" -name ez_setup.py 2>/dev/null|head -n1)
+    if [[ ! -e "$ss" ]];then
+        if [[ -n $ONLINE  ]];then
+            download_sez
+            local ss=$(find "$DS" "$w/downloads/minitage/ez_setup.py" -name ez_setup.py 2>/dev/null|head -n1)
+        fi
+    fi
+    if [[ ! -e "$ss" ]];then
+        local ss=$(find  "$PYPATH/downloads"  -name ez_setup.py 2>/dev/null|head -n1)
+    fi
+    if [[ ! -e "$ss" ]];then
+        local ss=$(find  "$w/downloads"  -name ez_setup.py 2>/dev/null|head -n1)
+    fi
+    if [[ ! -e "$ss" ]];then
+        local ss=$(find "$w" -name ez_setup.py 2>/dev/null|head -n1)
+    fi
+    echo $ss
+}
+
 find_ds() {
     local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
     if [[ ! -e "$ds" ]];then
@@ -567,27 +595,29 @@ find_ds() {
 safe_check() {
     green "Safe check"
     local pypi=$(egrep "^127\.0\.0\.1.*pypi.python.org" /etc/hosts|wc -l)
+    ensure_last_distribute
     local ds="$(find_ds)"
-    if [[ -e "$ds" ]];then
-        if [[ -n $ONLINE  ]];then
-            if [[ $(grep "0.7b" "$DS" | wc -l) == "0" ]];then
-                warn "Upgrading to last distribute_setup>0.7"
-                download_ez
-                local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
-            fi
-        fi
-    fi
+    local ss="$(find_ss)"
     if [[ ! -e $DOWNLOADS_DIR ]];then
         mkdir -pv $DOWNLOADS_DIR
     fi
-    if [[ -z ${ONLINE} ]];then
-        if [[ ! -e "$ds" ]];then
-            die "distribute_setup.py not found"
+    #if [[ -z ${ONLINE} ]];then
+        if [[ ! -e "$ss" ]];then
+            die "ez_setup.py not found"
+        fi
+        if [[ ! -e "$SS" ]];then
+            ln -sfv "$ss" "$SS"
         fi
         if [[ ! -e "$DS" ]];then
-            ln -sfv "$ds" "$DS"
+            ln -sfv "$ss" "$DS"
         fi
-    fi
+    #    if [[ ! -e "$ds" ]];then
+    #        die "distribute_setup.py not found"
+    #    fi
+    #    if [[ ! -e "$DS" ]];then
+    #        ln -sfv "$ds" "$DS"
+    #    fi
+    #fi
     if [[ "$pypi" == "0" ]];then
         if [[ -z ${ONLINE} ]];then
             warn "Did you forget to add to /etc/hosts (<C-C> to abort, <enter to continue> :"
@@ -679,12 +709,29 @@ offlinedeploy() {
 
 ensure_last_distribute() {
     # upgrade to last distribute>0.7 if online
-    if [[ -n $ONLINE ]];then
-        if [[ $("$w/bin/easy_install" --version|awk '{print $2}'|sed -re "s/0.6.*/match/") == "match" ]];then
-            red "Upgrading distribute"
-            "$w/bin/easy_install" -f https://bitbucket.org/pypa/setuptools/downloads -U "distribute>=0.7"
+    for pypath in $PYPATH $w;do
+        atest="$("$pypath/bin/easy_install" --version|awk '{print $2}'|sed -re "s/0.6.*/match/")"
+        atest='match'
+        if [[  "$atest" == "match" ]];then
+            red "Upgrading distribute in $pypath"
+            if [[ "$pypath" == "$w" ]];then
+                cp  -rfv\
+                    "$DOWNLOADS_DIR/minitage/distribute"* \
+                    "$DOWNLOADS_DIR/minitage/setuptools"* \
+                    "$DOWNLOADS_DIR/minitage/ez_setup.py" \
+                    "$DOWNLOADS_DIR/minitage/eggs"
+            fi
+            if [[ $pypath == $PYPATH ]];then
+                # rerun pybootstrap to install new setuptools
+                install_pyboostrap
+            fi
+            if [[ -n $ONLINE ]];then
+                "$w/bin/easy_install" -f https://bitbucket.org/pypa/setuptools/downloads -U "distribute>=0.7"
+            else
+                ez_offline "distribute>=0.7" "$pypath" || die "cant install egg: distribute>=0.7 ($pypath)"
+            fi
         fi
-    fi 
+    done
 }
 
 deploy() {

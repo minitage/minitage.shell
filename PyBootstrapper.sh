@@ -88,6 +88,7 @@ openssl_mirror="http://www.openssl.org/source/openssl-1.0.1e.tar.gz"
 openssl_md5="66bf6f10f060d561929de96f9dfe5b8c"
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
+ez_mirror="https://bitbucket.org/pypa/setuptools/raw/0.7.2/ez_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
 ez_md5="494757ae608c048e1c491c5d4e0a81e6"
 ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
@@ -96,6 +97,8 @@ ez_md5=""
 
 virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.9.1.tar.gz"
 virtualenv_md5="07e09df0adfca0b2d487e39a4bf2270a"
+distribute_mirror="https://bitbucket.org/pypa/setuptools/downloads/distribute-0.7.zip"
+distribute_md5="888cca5a77bdc65f4ca43cb67a3ed50b"
 
 hg_mirror="http://hg.intevation.org/files/mercurial-1.0.tar.gz"
 hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
@@ -270,7 +273,7 @@ cmmi() {
 # $1: URL
 give_filename_from_url() {
     local arg=$1
-    local url="$(echo "$arg" |$SED_RE "s:^((http|ftp)\://.*/)([^/]*)(/*)$:\3:g")"
+    local url="$(echo "$arg" |$SED_RE "s:^((http|ftp|https)\://.*/)([^/]*)(/*)$:\3:g")"
     if [[ -z "$url" ]];then
         die "Failed to get filename from $arg"
     else
@@ -444,31 +447,22 @@ ez_offline() {
     "$ez" -H None -f "$download_dir" "$egg" || die "easy install failed for egg"
 }
 
-installorupgrade_setuptools(){
+installorupgrade_setuptools_ng(){
     red "installing setuptools & virtualenv"
     download "$ez_mirror" NOCHECK "$myfullpath"
     local myfullpath="${LAST_DOWNLOADED_FILE}"
-    local paths="$download_dir"
-    if [[ -e "$download_dir/../dist" ]];then
-        paths="$paths "$download_dir"/../dist"
-    fi
-    local dist="$(find $paths -name distribute*z|head -n1)"
     local extra_args=""
-    if [[ -n $offline ]] && [[ -n $dist ]];then
-        local ddist="$(dirname $dist)"
+    if [[ -n $offline ]];then
+        local ddist="$(dirname $myfullpath)"
         extra_args="--download-base file://$ddist/"
     fi
     qpushd "$download_dir"
+    red "$python" "$myfullpath" $extra_args
     res=$("$python" "$myfullpath" $extra_args)
-    if [[ -z $dist  ]];then
-        local dist="$(find "$download_dir" -name distribute*z|head -n1)"
-    fi
     qpopd
-    res=$(echo $res|$SED_RE "s/.*(-U\s*distribute).*/reinstall/g")
-    if [[ "$res" == "reinstall" ]];then
-       "$python" "$myfullpath" -U Distribute
-    fi
     download "$virtualenv_mirror" "$virtualenv_md5"
+    download "$distribute_mirror" "$distribute_md5"
+    ez_offline "distribute>=0.7" || die "distribute installation failed"
     ez_offline "VirtualEnv" || die "VirtualEnv installation failed"
 }
 
@@ -502,7 +496,7 @@ main() {
     #    get_macos_patches
     #fi
     bootstrap
-    installorupgrade_setuptools || die "install_setuptools failed"
+    installorupgrade_setuptools_ng || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
     if [[ -e "$prefix/=" ]];then
         rm -rf -- "$prefix/="
