@@ -682,7 +682,7 @@ ensure_last_distribute() {
     if [[ -n $ONLINE ]];then
         if [[ $("$w/bin/easy_install" --version|awk '{print $2}'|sed -re "s/0.6.*/match/") == "match" ]];then
             red "Upgrading distribute"
-            "$w/bin/easy_install" -U "distribute>=0.7"
+            "$w/bin/easy_install" -f https://bitbucket.org/pypa/setuptools/downloads -U "distribute>=0.7"
         fi
     fi 
 }
