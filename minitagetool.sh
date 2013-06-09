@@ -569,9 +569,9 @@ find_ss() {
     if [[ ! -e "$ss" ]];then
         local ss=$(find  "$w/downloads"  -name ez_setup.py 2>/dev/null|head -n1)
     fi
-    if [[ ! -e "$ss" ]];then
-        local ss=$(find "$w" -name ez_setup.py 2>/dev/null|head -n1)
-    fi
+    #if [[ ! -e "$ss" ]];then
+    #    local ss=$(find "$w" -name ez_setup.py 2>/dev/null|head -n1)
+    #fi
     echo $ss
 }
 
@@ -589,9 +589,9 @@ find_ds() {
     if [[ ! -e "$ds" ]];then
         local ds=$(find  "$w/downloads"  -name distribute_setup.py 2>/dev/null|head -n1)
     fi
-    if [[ ! -e "$ds" ]];then
-        local ds=$(find "$w" -name distribute_setup.py 2>/dev/null|head -n1)
-    fi
+    #if [[ ! -e "$ds" ]];then
+    #    local ds=$(find "$w" -name distribute_setup.py 2>/dev/null|head -n1)
+    #fi
     echo $ds
 }
 
