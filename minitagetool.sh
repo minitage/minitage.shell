@@ -677,6 +677,16 @@ offlinedeploy() {
     ONLINE="" deploy $@
 }
 
+ensure_last_distribute() {
+    # upgrade to last distribute>0.7 if online
+    if [[ -n $ONLINE ]];then
+        if [[ $("$w/bin/easy_install" --version|awk '{print $2}'|sed -re "s/0.6.*/match/") == "match" ]];then
+            red "Upgrading distribute"
+            "$w/bin/easy_install" -U "distribute>=0.7"
+        fi
+    fi 
+}
+
 deploy() {
     green "Running deploy procedure"
     local cargs="${@:-"${COMMAND_ARGS}"}"
@@ -695,16 +705,11 @@ deploy() {
         mbase=""
     fi
     $vdo_step install_virtualenv
-    # upgrade to last distribute>0.7 if online
-    if [[ -n $ONLINE ]];then
-        if [[ $("$w/bin/easy_install" --version|awk '{print $2}'|sed -re "s/0.6.*/match/") == "match" ]];then
-            red "Upgrading distribute"
-            "$w/bin/easy_install" -U "distribute>=0.7"
-        fi
-    fi
+    ensure_last_distribute
     safe_check
     $mbase deploy_minitage
     $mbase install_plone_deps
+    ensure_last_distribute
     for i in ${cargs};do
         install_project $i
     done
