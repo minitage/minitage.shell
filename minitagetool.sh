@@ -708,6 +708,7 @@ deploy() {
     ensure_last_distribute
     safe_check
     $mbase deploy_minitage
+    ensure_last_distribute
     $mbase install_plone_deps
     ensure_last_distribute
     for i in ${cargs};do
