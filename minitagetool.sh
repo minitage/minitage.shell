@@ -540,11 +540,15 @@ snapshot() {
     fi
     red $msg
 }
+
+download_ez() {
+    $wget "$DS" "$ez_mirror"
+}
 find_ds() {
     local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
     if [[ ! -e "$ds" ]];then
         if [[ -n $ONLINE  ]];then
-            $wget "$DS" "$ez_mirror"
+            download_ez
             local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
         fi
     fi
@@ -564,6 +568,15 @@ safe_check() {
     green "Safe check"
     local pypi=$(egrep "^127\.0\.0\.1.*pypi.python.org" /etc/hosts|wc -l)
     local ds="$(find_ds)"
+    if [[ -e "$ds" ]];then
+        if [[ -n $ONLINE  ]];then
+            if [[ $(grep "0.7b" "$DS" | wc -l) == "0" ]];then
+                warn "Upgrading to last distribute_setup>0.7"
+                download_ez
+                local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
+            fi
+        fi
+    fi
     if [[ ! -e $DOWNLOADS_DIR ]];then
         mkdir -pv $DOWNLOADS_DIR
     fi
@@ -682,6 +695,13 @@ deploy() {
         mbase=""
     fi
     $vdo_step install_virtualenv
+    # upgrade to last distribute>0.7 if online
+    if [[ -n $ONLINE ]];then
+        if [[ $("$w/bin/easy_install" --version|awk '{print $2}'|sed -re "s/0.6.*/match/") == "match" ]];then
+            red "Upgrading distribute"
+            "$w/bin/easy_install" -U "distribute>=0.7"
+        fi
+    fi
     safe_check
     $mbase deploy_minitage
     $mbase install_plone_deps
@@ -738,7 +758,7 @@ install_cgwb_wrapper() {
 }
 
 cgwb() {
-    do_step install_cgwb_wrapper    
+    do_step install_cgwb_wrapper
     green "Launching cgwb"
     cd "$w/bfg/cgwb"
     ./l.sh
@@ -846,7 +866,7 @@ checkout_or_update() {
                     txt="Pulling $i"
                 fi
                 log "$txt"
-                git pull $args 
+                git pull $args
                 local ret="$?"
                 if [[ "$ret" == "0" ]];then
                     if [[ -n $url ]];then
