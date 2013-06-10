@@ -442,6 +442,17 @@ compile_pythoni(){
     unset CFLAGS CPPFLAGS LDFLAGS OPT LD_RUN_PATH
 }
 
+ez() {
+    egg="$1"
+    ez="$(ls $prefix/bin/easy_install*|tail -n1)"
+    local py=$prefix/bin/python
+    if [[ ! -e $py ]];then
+        py=$prefix/bin/python2.7
+    fi
+    "$py" -c 'from setuptools.command.easy_install import main; main()' \
+        -f "$download_dir" \
+        "$egg" || die "easy install failed for egg $egg"
+}
 ez_offline() {
     egg="$1"
     ez="$(ls $prefix/bin/easy_install*|tail -n1)"
@@ -450,14 +461,19 @@ ez_offline() {
         py=$prefix/bin/python2.7
     fi
     "$py" -c 'from setuptools.command.easy_install import main; main()' \
-            -H None -f "$download_dir" "$egg" || die "easy install failed for egg $egg"
-    #"$ez" -H None -f "$download_dir" "$egg" || die "easy install failed for egg $egg"
+        -H None \
+        -f "$download_dir" \
+        "$egg" || die "easy install failed for egg $egg"
 }
 
 install_distribute(){
     if [[ -f "$prefix/bin/easy_install" ]];then
         download "$distribute_mirror" "$distribute_md5"
-        ez_offline "distribute>=0.7" || if [[ "$1" == "1" ]];then die "install distribute faild";fi
+        if [[ -n ${offline} ]];then
+            ez_offline "distribute==0.7" || if [[ "$1" == "1" ]];then die "install distribute faild";fi
+        else
+            ez "distribute==0.7" || if [[ "$1" == "1" ]];then die "install distribute faild";fi
+        fi
     fi
 }
 installorupgrade_setuptools_ng(){

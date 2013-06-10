@@ -717,7 +717,7 @@ ensure_last_distribute() {
         if [[ ! -e $py ]];then
             py=$pypath/bin/python2.7
         fi
-        atest="$("$py" -c 'import pkg_resources;print pkg_resources.get_distribution("distribute").version' &2>/dev/null|sed -re "s/0.6.*/match/")"
+        atest="$("$py" -c 'import pkg_resources;print pkg_resources.get_distribution("distribute").version' |sed -re "s/0.6.*/match/")"
         if [[ -z $atest ]];then
             atest="match"
         fi
