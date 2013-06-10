@@ -34,6 +34,7 @@ GITP_URL="git://github.com/minitage"
 HTTPS_URL="https://github.com/minitage"
 HTTP_URL="http://github.com/minitage"
 DS="$w/eggs/cache/distribute_setup.py"
+SS="$w/eggs/cache/ez_setup.py"
 GIT_URLS="
     $SSH_URL
     $GITP_URL
@@ -43,6 +44,7 @@ GIT_URLS="
 "
 sync_minpath=${BASE_EGGS:-"${w}/host/home/kiorky/minitage"}
 ez_mirror="http://python-distribute.org/distribute_setup.py"
+sez_mirror="https://bitbucket.org/pypa/setuptools/raw/0.7.2/ez_setup.py"
 PYPATH="$w/tools/python"
 # search for old installs
 if [[ ! -e "$w/tools/" ]];then
@@ -58,6 +60,8 @@ for i in $(ls -drt $(for j in $PYPATHS;do echo "$j"/*;done) 2>/dev/null);do
         break
     fi
 done
+UNAME=$(uname)
+UNAME_R=$(uname -r)
 PYB="$w/sources/minitage.shell/PyBootstrapper.sh"
 if [[ "$ONLINE" == "n" ]];then
     ONLINE=""
@@ -135,15 +139,26 @@ host
 lib
 minilays
 tools"
+
 # pretty term colors
 DOWNLOADS_DIR="$w/downloads"
+fl="$fl $DOWNLOADS_DIR/minitage"
 fl="$fl $DOWNLOADS_DIR/dist"
 fl="$fl $DOWNLOADS_DIR/minitage/eggs"
 fl="$fl $w/eggs/cache"
 if [[ -f $(which gsed 2>&1) ]];then
-SED="$(which gsed)"
+    SED="$(which gsed)"
+elif [[ $(uname) == "Darwin" ]];then
+    SED="$(which sed)"
 else
     SED="$(which sed)"
+fi
+if [[ $(uname) == "Darwin" ]];then
+    SED_RE="$SED -E"
+    SED_IRE="$SED -iE"
+else
+    SED_RE="$SED -re"
+    SED_IRE="$SED -ire"
 fi
 GREEN=$'\e[32;01m'
 YELLOW=$'\e[33;01m'
@@ -190,6 +205,16 @@ elif [[ -f $(which wget) ]];then
     wget="$(which wget)  -c -O"
 fi
 
+add_paths() {
+    if [[ "$UNAME" == "Darwin" ]];then
+        if  [[ ! "$PATH" == */usr/X11/bin* ]];then
+            syellow "adding /usr/X11/bin to path"
+            export PATH=$PATH:/usr/X11/bin
+        fi
+    fi
+}
+add_paths
+
 qpushd() {
     pushd "$1" 2>&1 >> /dev/null
 }
@@ -218,12 +243,12 @@ download-directory = $DOWNLOADS_DIR
 download-cache =     $DOWNLOADS_DIR
 EOF
 else
-    "${SED}" -re \
+    ${SED_IRE}\
         "s:^download-directory.*:download-directory=${DOWNLOADS_DIR}:g" \
-        -i "$dcfg"
-    "${SED}" -re \
+        "$dcfg"
+    ${SED_IRE} \
         "s:^download-cache.*:download-cache=${DOWNLOADS_DIR}:g" \
-        -i "$dcfg"
+        "$dcfg"
     nb=$(grep  $DOWNLOADS_DIR "$dcfg" | wc -l)
     if [[ "$nb" == "0" ]];then
         cat >> "$dcfg" << EOF
@@ -263,9 +288,6 @@ deploy_minitage() {
         do_step fetch_initial_deps
     fi
     install_minitage_python
-    if [[ -n $ONLINE ]];then
-        install_cgwb
-    fi
 }
 
 refresh() {
@@ -312,12 +334,15 @@ die() {
 }
 
 ez_offline() {
-    local egg="$1" pyprefix="${2:-$w}" ez=""
-    ez="$(ls $pyprefix/bin/easy_install*|tail -n1)"
+    local egg="$1" pyprefix="${2:-$w}"
+    local py=$pyprefix/bin/python
+    if [[ ! -e $py ]];then
+        py=$pyprefix/bin/python2.7
+    fi
     if [[ -n $ONLINE ]];then
-        "$ez" -f "$fl" "$egg" || die "easy install(online) failed for egg"
+        "$py" -c 'print "doo":from setuptools.command.easy_install import main; main()' -f "$fl" "$egg" || die "easy install(online) failed for egg $egg"
     else
-        "$ez" -H None -f "$fl" "$egg" || die "easy install (offline) failed for egg"
+        "$py" -c 'from setuptools.command.easy_install import main; main()' "$ez" -H None -f "$fl" "$egg" || die "easy install (offline) failed for egg $egg"
     fi
 }
 
@@ -464,7 +489,7 @@ snapshot() {
     find eggs/cache\
         | grep  "linux-x86_64.egg" \
         >>"$ignoref"
-    find \
+    find  \
         dependencies/ \
         sources/ \
         bfg/cgwb \
@@ -472,6 +497,7 @@ snapshot() {
         $eggs_dirs\
         | egrep -v $excl_regex \
         >>"$f"
+    echo eggs/pil-1.1.7/.downloads >> "$f"
     if [[ -n $selected_projects ]];then
         find $projects_dirs minilays\
             $projects "$ignoref"\
@@ -494,7 +520,10 @@ snapshot() {
     local snapf="${sbase}-base.tbz2"
     local snapd="${sbase}-downloads.tbz2"
     local snapp="${sbase}-projects.tbz2"
-    local msg="Archiving minitage in $snapf $snapd"
+    local msg="Archiving minitage in $snapf"
+    if [[ -z $NODOWNLOAD ]];then
+        local msg="$msg $snapd"
+    fi
     if [[ -n $selected_projects ]];then
         local msg="$msg $snapp"
     fi
@@ -502,21 +531,55 @@ snapshot() {
     green "$msg"
     warn "<C-C> to abort";read
     tar cjvf "$snapf" -T "$f" -X "$ignoref"
-    tar cjvf "$snapd" -T "$download" -X "$ignoref"
+    if [[ -z $NODOWNLOAD ]];then
+        tar cjvf "$snapd" -T "$download" -X "$ignoref"
+    fi
     if [[ -n $selected_projects ]];then
         tar cjvf "$snapp" -T "$projects" -X "$ignoref"
     fi
-    msg="Produced $snapf $snapd"
+    msg="Produced $snapf"
+    if [[ -z $NODOWNLOAD ]];then
+        msg="$msg $snapd"
+    fi
     if [[ -n $selected_projects ]];then
         msg="$msg $snapp"
     fi
     red $msg
 }
+
+download_ez() {
+    $wget "$DS" "$ez_mirror"
+}
+
+download_sez() {
+    $wget "$SS" "$sez_mirror"
+}
+
+find_ss() {
+    local ss=$(find "$DS" "$w/downloads/minitage/ez_setup.py" -name ez_setup.py 2>/dev/null|head -n1)
+    if [[ ! -e "$ss" ]];then
+        if [[ -n $ONLINE  ]];then
+            download_sez
+            local ss=$(find "$DS" "$w/downloads/minitage/ez_setup.py" -name ez_setup.py 2>/dev/null|head -n1)
+        fi
+    fi
+    if [[ ! -e "$ss" ]];then
+        local ss=$(find  "$PYPATH/downloads"  -name ez_setup.py 2>/dev/null|head -n1)
+    fi
+    if [[ ! -e "$ss" ]];then
+        local ss=$(find  "$w/downloads"  -name ez_setup.py 2>/dev/null|head -n1)
+    fi
+    #if [[ ! -e "$ss" ]];then
+    #    local ss=$(find "$w" -name ez_setup.py 2>/dev/null|head -n1)
+    #fi
+    echo $ss
+}
+
 find_ds() {
     local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
     if [[ ! -e "$ds" ]];then
         if [[ -n $ONLINE  ]];then
-            $wget "$DS" "$ez_mirror"
+            download_ez
             local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
         fi
     fi
@@ -526,27 +589,38 @@ find_ds() {
     if [[ ! -e "$ds" ]];then
         local ds=$(find  "$w/downloads"  -name distribute_setup.py 2>/dev/null|head -n1)
     fi
-    if [[ ! -e "$ds" ]];then
-        local ds=$(find "$w" -name distribute_setup.py 2>/dev/null|head -n1)
-    fi
+    #if [[ ! -e "$ds" ]];then
+    #    local ds=$(find "$w" -name distribute_setup.py 2>/dev/null|head -n1)
+    #fi
     echo $ds
 }
 
 safe_check() {
     green "Safe check"
     local pypi=$(egrep "^127\.0\.0\.1.*pypi.python.org" /etc/hosts|wc -l)
+    ensure_last_distribute
     local ds="$(find_ds)"
+    local ss="$(find_ss)"
     if [[ ! -e $DOWNLOADS_DIR ]];then
         mkdir -pv $DOWNLOADS_DIR
     fi
-    if [[ -z ${ONLINE} ]];then
-        if [[ ! -e "$ds" ]];then
-            die "distribute_setup.py not found"
+    #if [[ -z ${ONLINE} ]];then
+        if [[ ! -e "$ss" ]];then
+            die "ez_setup.py not found"
+        fi
+        if [[ ! -e "$SS" ]];then
+            ln -sfv "$ss" "$SS"
         fi
         if [[ ! -e "$DS" ]];then
-            ln -sfv "$ds" "$DS"
+            ln -sfv "$ss" "$DS"
         fi
-    fi
+    #    if [[ ! -e "$ds" ]];then
+    #        die "distribute_setup.py not found"
+    #    fi
+    #    if [[ ! -e "$DS" ]];then
+    #        ln -sfv "$ds" "$DS"
+    #    fi
+    #fi
     if [[ "$pypi" == "0" ]];then
         if [[ -z ${ONLINE} ]];then
             warn "Did you forget to add to /etc/hosts (<C-C> to abort, <enter to continue> :"
@@ -565,7 +639,7 @@ install_plone_deps() {
     cp "$w/dependencies/zlib-1.2/bootstrap.py" "$w/zope/plone"
     cat > "$w/minilays/plone/plone" << EOF
 [minibuild]
-dependencies= libxml2-2.7 libxslt-1.1 py-libxml2-2.7 py-libxslt-1.1 pil-1.1.7 libiconv-1.12 python-2.7 git-1.7 subversion-1.7 openldap-2.4
+dependencies= libxml2-2.7 libxslt-1.1 py-libxml2-2.7 py-libxslt-1.1 pil-1.1.7 libiconv-1.12 python-2.7 git-1 subversion-1.7 openldap-2.4
 install_method=buildout
 src_uri=/dev/null
 src_type=git
@@ -607,7 +681,7 @@ install_cgwb() {
 }
 
 install_project() {
-    green "Installing project :$1"
+    green "Installing project : $1"
     minimerge_wrapper --only-dependencies $i
     minimerge_wrapper -NE $1
     minimerge_wrapper -aNRv $i
@@ -636,6 +710,39 @@ offlinedeploy() {
     ONLINE="" deploy $@
 }
 
+ensure_last_distribute() {
+    # upgrade to last distribute>0.7 if online
+    for pypath in $PYPATH $w;do
+        local py=$pypath/bin/python
+        if [[ ! -e $py ]];then
+            py=$pypath/bin/python2.7
+        fi
+        atest="$("$py" -c 'import pkg_resources;print pkg_resources.get_distribution("distribute").version' |sed -re "s/0.6.*/match/")"
+        if [[ -z $atest ]];then
+            atest="match"
+        fi
+        if [[  "$atest" == "match" ]];then
+            red "Upgrading setuptools/distribute in $pypath"
+            if [[ "$pypath" == "$w" ]];then
+                cp  -rfv\
+                    "$DOWNLOADS_DIR/minitage/distribute"* \
+                    "$DOWNLOADS_DIR/minitage/setuptools"* \
+                    "$DOWNLOADS_DIR/minitage/ez_setup.py" \
+                    "$DOWNLOADS_DIR/minitage/eggs"
+            fi
+            if [[ $pypath == $PYPATH ]];then
+                # rerun pybootstrap to install new setuptools
+                install_pyboostrap
+            fi
+            if [[ -n $ONLINE ]];then
+                "$w/bin/easy_install" -f https://bitbucket.org/pypa/setuptools/downloads -U "distribute>=0.7"
+            else
+                ez_offline "distribute>=0.7" "$pypath" || die "cant install egg: distribute>=0.7 ($pypath)"
+            fi
+        fi
+    done
+}
+
 deploy() {
     green "Running deploy procedure"
     local cargs="${@:-"${COMMAND_ARGS}"}"
@@ -654,9 +761,12 @@ deploy() {
         mbase=""
     fi
     $vdo_step install_virtualenv
+    ensure_last_distribute
     safe_check
     $mbase deploy_minitage
+    ensure_last_distribute
     $mbase install_plone_deps
+    ensure_last_distribute
     for i in ${cargs};do
         install_project $i
     done
@@ -703,10 +813,15 @@ sync() {
     done
     SKIPCHECKOUTS="y" selfupgrade
 }
+install_cgwb_wrapper() {
+    if [[ -n $ONLINE ]];then
+        install_cgwb
+    fi
+}
 
 cgwb() {
+    do_step install_cgwb_wrapper
     green "Launching cgwb"
-    minimerge_wrapper cgwb
     cd "$w/bfg/cgwb"
     ./l.sh
 }
@@ -746,6 +861,7 @@ install_tool() {
     fi
     ln -sf "$w/sources/minitage.shell/$THIS" "$w/$THIS"
     ln -sf "$w/sources/minitage.shell/$THIS" "$w/bin/$THIS"
+    ln -sf "$w/sources/minitage.shell/minitage-git.sh" "$w/bin/minitage-git.sh"
 }
 
 
@@ -800,8 +916,11 @@ checkout_or_update() {
         elif [[ -n $ONLINE ]];then
             qpushd "$i"
             for urlt in "" ${cl_u};do
-                local url="${urlt}/$i.git" args=""
+                local url="" args=""
                 if [[ -n $urlt ]];then
+                    url="${urlt}/$i.git"
+                fi
+                if [[ -n $url ]];then
                     args="$url master"
                     txt="Pulling from $url"
                 else
@@ -812,6 +931,10 @@ checkout_or_update() {
                 git pull $args
                 local ret="$?"
                 if [[ "$ret" == "0" ]];then
+                    if [[ -n $url ]];then
+                        warn "Setting remote to $url"
+                        git remote set-url origin "$url"
+                    fi
                     cl_u=$(reorder_urls $urlt 0 $cl_u)
                     updated="1"
                     break
@@ -822,7 +945,11 @@ checkout_or_update() {
             qpopd
         fi
         if [[ -z "$updated" ]];then
-            die "Clone/Pulling $i failed"
+            if [[ -n "$ONLINE" ]];then
+                if [[ ! -d "$w/sources/$i" ]];then
+                    die "Clone/Pulling $i failed"
+                fi
+            fi
         fi
     done
     qpopd
@@ -855,7 +982,7 @@ bootstrap() {
     ONLINE="TRUE" SYNC="TRUE" "$w/$THIS" deploy ${cargs}
 }
 
-offlinebootstrap() {
+offlineupgrade() {
     green "Running $THIS in offline mode"
     local do_step="do_step" cargs=""
     for i in ${COMMAND_ARGS};do
@@ -882,9 +1009,9 @@ usage_offlinedeploy() {
     green "  $w/$THIS offlinedeploy <project minibuild>"
 }
 
-usage_offlinebootstrap() {
+usage_offlineupgrade() {
     red "Reinstalling minitage packages & projects  after an upgrade for tarballs"
-    green "  $w/$THIS offlinebootstrap <project minibuild>"
+    green "  $w/$THIS offlineupgrade <project minibuild>"
 }
 
 usage_snapshot() {
@@ -934,7 +1061,7 @@ usage() {
     log
     usage_offlinedeploy
     log
-    usage_offlinebootstrap
+    usage_offlineupgrade
     log
     usage_snapshot
     log
@@ -947,7 +1074,7 @@ usage() {
 
 }
 script_usage="usage"
-script_usage_self="bootstrap|selfupgrade|offlinebootstrap"
+script_usage_self="bootstrap|selfupgrade|offlineupgrade"
 script_usage_deploy="deploy|offlinedeploy|snapshot|cgwb"
 script_usage_intern="refresh|checkout_or_update|eggpush|mount|sync|push"
 short_usage() {
@@ -959,9 +1086,9 @@ short_usage() {
     sgreen "$0 $(syellow "Use:      ")$(sred  ${script_usage_deploy})"
     sgreen "$0 $(syellow "Internal: ")$(sred  ${script_usage_intern})"
 }
-help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb offlinebootstrap"
+help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb offlineupgrade"
 case $command in
-    deploy_minitage|eggpush|offlinebootstrap|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
+    deploy_minitage|eggpush|offlineupgrade|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
     mount) do_${command} ${COMMAND_ARGS};;
     help|--help|-h|usage)
         for i in ${COMMAND_ARGS};do

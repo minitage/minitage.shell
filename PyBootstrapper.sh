@@ -15,6 +15,8 @@ version="1.0"
 offline=""
 
 UNAME="$(uname)"
+UNAME_R=$(uname -r)
+
 
 MD5SUM="$(which md5sum)"
 if [[ -f $(which md5 2>/dev/null) ]];then
@@ -30,17 +32,25 @@ if [[ $(uname) == "FreeBSD" ]];then
         wget="$(which fetch) -pra -o"
     fi
 #another macosx hack
+elif [[ -f $(which wget) ]];then
+    wget="$(which wget) --no-check-certificate  -c -O"
 elif [[ -f $(which curl 2>&1) ]];then
     wget="$(which curl) -a -o"
-elif [[ -f $(which wget) ]];then
-    wget="$(which wget)  -c -O"
 fi
 
-
 if [[ -f $(which gsed 2>&1) ]];then
-SED="$(which gsed)"
+    SED="$(which gsed)"
+elif [[ $(uname) == "Darwin" ]];then
+    SED="$(which sed)"
 else
     SED="$(which sed)"
+fi
+if [[ $(uname) == "Darwin" ]];then
+    SED_RE="$SED -E"
+    SED_IRE="$SED -iE"
+else
+    SED_RE="$SED -re"
+    SED_IRE="$SED -ire"
 fi
 
 #gentoo_mirror="ftp://gentoo.imj.fr/pub"
@@ -69,8 +79,8 @@ python25_mirror="http://python.org/ftp/python/2.5.4/Python-2.5.4.tar.bz2"
 python25_md5="394a5f56a5ce811fb0f023197ec0833e"
 python26_mirror="http://python.org/ftp/python/2.6.6/Python-2.6.6.tar.bz2"
 python26_md5="cf4e6881bb84a7ce6089e4a307f71f14"
-python27_mirror="http://python.org/ftp/python/2.7.3/Python-2.7.3.tar.bz2"
-python27_md5="c57477edd6d18bd9eeca2f21add73919"
+python27_mirror="http://python.org/ftp/python/2.7.5/Python-2.7.5.tar.bz2"
+python27_md5="6334b666b7ff2038c761d7b27ba699c1"
 python_mirror="$python27_mirror"
 python_md5="$python27_md5"
 
@@ -78,6 +88,7 @@ openssl_mirror="http://www.openssl.org/source/openssl-1.0.1e.tar.gz"
 openssl_md5="66bf6f10f060d561929de96f9dfe5b8c"
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
+ez_mirror="https://bitbucket.org/pypa/setuptools/raw/0.7.2/ez_setup.py"
 ez_md5="94ce3ba3f5933e3915e999c26da9563b"
 ez_md5="494757ae608c048e1c491c5d4e0a81e6"
 ez_md5="ce4f96fd7afac7a6702d7a45f665d176"
@@ -86,6 +97,8 @@ ez_md5=""
 
 virtualenv_mirror="http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.9.1.tar.gz"
 virtualenv_md5="07e09df0adfca0b2d487e39a4bf2270a"
+distribute_mirror="https://downloads.sourceforge.net/project/minitage/distribute-0.7.zip"
+distribute_md5="888cca5a77bdc65f4ca43cb67a3ed50b"
 
 hg_mirror="http://hg.intevation.org/files/mercurial-1.0.tar.gz"
 hg_md5="9f8dd7fa6f8886f77be9b923f008504c"
@@ -127,7 +140,15 @@ qpushd() {
 qpopd() {
     popd    2>&1 >> /dev/null
 }
-
+add_paths() {
+    if [[ "$UNAME" == "Darwin" ]];then
+        if  [[ ! "$PATH" == */usr/X11/bin* ]];then
+            syellow "adding /usr/X11/bin to path"
+            export PATH=$PATH:/usr/X11/bin
+        fi
+    fi
+}
+add_paths
 check_md5() {
     if [[ "$md5" != "$file_md5" ]];then
         warn "md5 for $myfullpath failed : $md5 != $file_md5 !"
@@ -252,7 +273,7 @@ cmmi() {
 # $1: URL
 give_filename_from_url() {
     local arg=$1
-    local url="$(echo "$arg" |"$SED" -re "s:^((http|ftp)\://.*/)([^/]*)(/*)$:\3:g")"
+    local url="$(echo "$arg" |$SED_RE "s:^((http|ftp|https)\://.*/)([^/]*)(/*)$:\3:g")"
     if [[ -z "$url" ]];then
         die "Failed to get filename from $arg"
     else
@@ -268,24 +289,25 @@ compile_bz2() {
     tar xzvf "$myfullpath" -C .
     cd *
     set_mac_target
-    if [[ $UNAME == 'Darwin' ]];then
-        download "$bz2_darwinpatch" "$bz2_darwinpatch_md5" "bz2darwin.patch";
-        patch="${LAST_DOWNLOADED_FILE}"
-        sed "s|__MacPorts_Compatibility_Version__|1.0|"  $patch\
-            | sed "s|__MacPorts_Version__|1.0.4|"\
-            | patch -p0
-    fi
     red "Compiling bzip2"
     make CFLAGS="$bz2_cflags"
     make install PREFIX="$prefix" || die "make install failed"
     # the libbz2 shared library
 
-    if [[ $UNAME != 'Darwin' ]];then
-        make  -f Makefile-libbz2_so all || die "Make failed libbz2"
+    if [[ $UNAME == 'Darwin' ]];then
+        $SED_IRE "s/-soname/-compatibility_version,1.0 -Wl,-current_version,1.0.6 -Wl,-install_name/g" Makefile-libbz2_so
+        $SED_IRE "s/libbz2.so.1.0.6/libbz2.1.0.6.dylib/g" Makefile-libbz2_so
+        $SED_IRE "s/libbz2.so.1.0/libbz2.1.0.dylib/g" Makefile-libbz2_so
     fi
-    for i in libbz2.so.* libbz2.a ;do
+    make  -f Makefile-libbz2_so all || die "Make failed libbz2"
+    for i in libbz2*dylib libbz2.so.* libbz2.a ;do
         if [[  -e "$i" ]];then
             cp "$i" "$prefix/lib" || die "shared librairies installation failed"
+        fi
+    done
+    for i in libbz2.so.* libbz2.*.dylib;do
+        if [[ -e "$i" ]];then
+            ln -sfv "$i" "$prefix/lib/libbz2.so"
         fi
     done
     cp bzlib.h "$prefix/include" || die "shared include installation failed"
@@ -357,13 +379,14 @@ compile_openssl(){
     fi
     if [[ $UNAME == 'Darwin' ]];then
         ldflags="$ldflags  -mmacosx-version-min=10.5.0"
-        if [[ $(uname -r|cut -c1-3  ) == "10." ]];then
+        $(uname -r|cut -c1-3  )
+        if [[ $(uname -r|$SED_RE "s/[1-9][0-9].[0-9]+.[0-9]+/match/g") == "match" ]];then
             platform="darwin64-x86_64-cc"
         fi
         sconfigure="./Configure"
     fi
     if [[ $UNAME == 'Darwin' ]];then
-        $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" shared no-fips "$platform" $ldflags
+        $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" shared no-fips "$platform" enable-ec_nistp_64_gcc_128 $ldflags
     else
         $sconfigure --prefix="$prefix" --openssldir="$prefix/etc/ssl" shared $ldflags no-fips  "$platform"
     fi
@@ -413,41 +436,61 @@ compile_pythoni(){
         echo "#define   SETPGRP_HAVE_ARG 1">> pyconfig.h
         echo >> pyconfig.h
     fi
+    rm -rf "$prefix/lib/libpython"*
     make || die "python compilation failed"
     make install || die "python install failed"
     unset CFLAGS CPPFLAGS LDFLAGS OPT LD_RUN_PATH
 }
 
+ez() {
+    egg="$1"
+    ez="$(ls $prefix/bin/easy_install*|tail -n1)"
+    local py=$prefix/bin/python
+    if [[ ! -e $py ]];then
+        py=$prefix/bin/python2.7
+    fi
+    "$py" -c 'from setuptools.command.easy_install import main; main()' \
+        -f "$download_dir" \
+        "$egg" || die "easy install failed for egg $egg"
+}
 ez_offline() {
     egg="$1"
     ez="$(ls $prefix/bin/easy_install*|tail -n1)"
-    "$ez" -H None -f "$download_dir" "$egg" || die "easy install failed for egg"
+    local py=$prefix/bin/python
+    if [[ ! -e $py ]];then
+        py=$prefix/bin/python2.7
+    fi
+    "$py" -c 'from setuptools.command.easy_install import main; main()' \
+        -H None \
+        -f "$download_dir" \
+        "$egg" || die "easy install failed for egg $egg"
 }
 
-installorupgrade_setuptools(){
+install_distribute(){
+    if [[ -f "$prefix/bin/easy_install" ]];then
+        download "$distribute_mirror" "$distribute_md5"
+        if [[ -n ${offline} ]];then
+            ez_offline "distribute==0.7" || if [[ "$1" == "1" ]];then die "install distribute faild";fi
+        else
+            ez "distribute==0.7" || if [[ "$1" == "1" ]];then die "install distribute faild";fi
+        fi
+    fi
+}
+installorupgrade_setuptools_ng(){
     red "installing setuptools & virtualenv"
+    install_distribute # first can fail
     download "$ez_mirror" NOCHECK "$myfullpath"
     local myfullpath="${LAST_DOWNLOADED_FILE}"
-    local paths="$download_dir"
-    if [[ -e "$download_dir/../dist" ]];then
-        paths="$paths "$download_dir"/../dist"
-    fi
-    local dist="$(find $paths -name distribute*z|head -n1)"
     local extra_args=""
-    if [[ -n $offline ]] && [[ -n $dist ]];then
-        local ddist="$(dirname $dist)"
+    if [[ -n $offline ]];then
+        local ddist="$(dirname $myfullpath)"
         extra_args="--download-base file://$ddist/"
     fi
     qpushd "$download_dir"
+    red "$python" "$myfullpath" $extra_args
     res=$("$python" "$myfullpath" $extra_args)
-    if [[ -z $dist  ]];then
-        local dist="$(find "$download_dir" -name distribute*z|head -n1)"
-    fi
     qpopd
-    res=$(echo $res|$SED -re "s/.*(-U\s*distribute).*/reinstall/g")
-    if [[ "$res" == "reinstall" ]];then
-       "$python" "$myfullpath" -U Distribute
-    fi
+    install_distribute
     download "$virtualenv_mirror" "$virtualenv_md5"
     ez_offline "VirtualEnv" || die "VirtualEnv installation failed"
 }
@@ -482,7 +525,7 @@ main() {
     #    get_macos_patches
     #fi
     bootstrap
-    installorupgrade_setuptools || die "install_setuptools failed"
+    installorupgrade_setuptools_ng || die "install_setuptools failed"
     rm -rf "$tmp_dir"/* &
     if [[ -e "$prefix/=" ]];then
         rm -rf -- "$prefix/="
