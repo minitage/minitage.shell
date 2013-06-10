@@ -556,11 +556,11 @@ download_sez() {
 }
 
 find_ss() {
-    local ss=$(find "$DS" "$w/downloads/minitage/ez_setup.py" -name ez_setup.py 2>/dev/null|head -n1)
+    local ss=$(find "$w/downloads/minitage/ez_setup.py" "$SS" -name ez_setup.py 2>/dev/null|head -n1)
     if [[ ! -e "$ss" ]];then
         if [[ -n $ONLINE  ]];then
             download_sez
-            local ss=$(find "$DS" "$w/downloads/minitage/ez_setup.py" -name ez_setup.py 2>/dev/null|head -n1)
+            local ss=$(find "$w/downloads/minitage/ez_setup.py" "$SS" -name ez_setup.py 2>/dev/null|head -n1)
         fi
     fi
     if [[ ! -e "$ss" ]];then
@@ -576,11 +576,11 @@ find_ss() {
 }
 
 find_ds() {
-    local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
+    local ds=$(find "$w/downloads/minitage/distribute_setup.py"  "$DS" -name distribute_setup.py 2>/dev/null|head -n1)
     if [[ ! -e "$ds" ]];then
         if [[ -n $ONLINE  ]];then
             download_ez
-            local ds=$(find "$DS" "$w/downloads/minitage/distribute_setup.py" -name distribute_setup.py 2>/dev/null|head -n1)
+            local ds=$(find "$w/downloads/minitage/distribute_setup.py" "$DS" -name distribute_setup.py 2>/dev/null|head -n1)
         fi
     fi
     if [[ ! -e "$ds" ]];then
@@ -605,15 +605,18 @@ safe_check() {
         mkdir -pv $DOWNLOADS_DIR
     fi
     #if [[ -z ${ONLINE} ]];then
-        if [[ ! -e "$ss" ]];then
-            die "ez_setup.py not found"
-        fi
-        if [[ ! -e "$SS" ]];then
-            ln -sfv "$ss" "$SS"
-        fi
-        if [[ ! -e "$DS" ]];then
-            ln -sfv "$ss" "$DS"
-        fi
+    if [[ -e "$ss" ]];then
+        rm "$SS" -rf
+        cp -fv "$ss" "$SS"
+    else
+        die "ez_setup.py not found"
+    fi
+    if [[ -e "$ds" ]];then
+        rm "$DS" -rf
+        cp -fv "$ds" "$DS"
+    else
+        die "distribute_setup.py not found"
+    fi
     #    if [[ ! -e "$ds" ]];then
     #        die "distribute_setup.py not found"
     #    fi
