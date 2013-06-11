@@ -33,6 +33,8 @@ SSH_URL="git@github.com:minitage"
 GITP_URL="git://github.com/minitage"
 HTTPS_URL="https://github.com/minitage"
 HTTP_URL="http://github.com/minitage"
+C_DS="$w/downloads/minitage/distribute_setup.py"
+C_SS="$w/downloads/minitage/ez_setup.py"
 DS="$w/eggs/cache/distribute_setup.py"
 SS="$w/eggs/cache/ez_setup.py"
 GIT_URLS="
@@ -215,6 +217,14 @@ add_paths() {
 }
 add_paths
 
+MD5SUM="$(which md5sum)"
+if [[ -f $(which md5 2>/dev/null) ]];then
+    MD5SUM="md5 -q"
+fi
+f_md5() {
+    file_md5="$($MD5SUM $mydest|awk '{print $1}')"*
+    echo $file_md
+}
 qpushd() {
     pushd "$1" 2>&1 >> /dev/null
 }
@@ -548,11 +558,11 @@ snapshot() {
 }
 
 download_ez() {
-    $wget "$DS" "$ez_mirror"
+    $wget "$C_DS" "$ez_mirror"
 }
 
 download_sez() {
-    $wget "$SS" "$sez_mirror"
+    $wget "$C_SS" "$sez_mirror"
 }
 
 find_ss() {
@@ -607,13 +617,13 @@ safe_check() {
     #if [[ -z ${ONLINE} ]];then
     if [[ -e "$ss" ]];then
         rm "$SS" -rf
-        cp -fv "$ss" "$SS"
+        cp -f "$ss" "$SS"
     else
         die "ez_setup.py not found"
     fi
     if [[ -e "$ds" ]];then
         rm "$DS" -rf
-        cp -fv "$ds" "$DS"
+        cp -f "$ds" "$DS"
     else
         die "distribute_setup.py not found"
     fi
