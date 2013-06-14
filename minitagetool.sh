@@ -611,8 +611,8 @@ safe_check() {
     ensure_last_distribute
     local ds="$(find_ds)"
     local ss="$(find_ss)"
-    if [[ ! -e $DOWNLOADS_DIR ]];then
-        mkdir -pv $DOWNLOADS_DIR
+    if [[ ! -e "$DOWNLOADS_DIR/minitage/eggs" ]];then
+        mkdir -pv "$DOWNLOADS_DIR/minitage/eggs"
     fi
     #if [[ -z ${ONLINE} ]];then
     if [[ -e "$ss" ]];then

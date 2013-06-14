@@ -443,7 +443,8 @@ compile_pythoni(){
 }
 
 ez() {
-    egg="$1"
+    local egg="$1"
+    local nofail="$2"
     ez="$(ls $prefix/bin/easy_install*|tail -n1)"
     local py=$prefix/bin/python
     if [[ ! -e $py ]];then
@@ -451,10 +452,11 @@ ez() {
     fi
     "$py" -c 'from setuptools.command.easy_install import main; main()' \
         -f "$download_dir" \
-        "$egg" || die "easy install failed for egg $egg"
+        "$egg" || if [[ -z $nofail ]];then die "easy install failed for egg $egg $nofail";fi
 }
 ez_offline() {
-    egg="$1"
+    local egg="$1"
+    local nofail="$2"
     ez="$(ls $prefix/bin/easy_install*|tail -n1)"
     local py=$prefix/bin/python
     if [[ ! -e $py ]];then
@@ -463,22 +465,22 @@ ez_offline() {
     "$py" -c 'from setuptools.command.easy_install import main; main()' \
         -H None \
         -f "$download_dir" \
-        "$egg" || die "easy install failed for egg $egg"
+        "$egg" || if [[ -z $nofail ]];then die "easy install failed for egg $egg $nofail";fi
 }
 
 install_distribute(){
     if [[ -f "$prefix/bin/easy_install" ]];then
         download "$distribute_mirror" "$distribute_md5"
         if [[ -n ${offline} ]];then
-            ez_offline "distribute==0.7" || if [[ "$1" == "1" ]];then die "install distribute faild";fi
+            ez_offline "distribute==0.7" $1
         else
-            ez "distribute==0.7" || if [[ "$1" == "1" ]];then die "install distribute faild";fi
+            ez "distribute==0.7" $1
         fi
     fi
 }
 installorupgrade_setuptools_ng(){
     red "installing setuptools & virtualenv"
-    install_distribute # first can fail
+    install_distribute 1
     download "$ez_mirror" NOCHECK "$myfullpath"
     local myfullpath="${LAST_DOWNLOADED_FILE}"
     local extra_args=""
