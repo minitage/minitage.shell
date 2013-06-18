@@ -352,7 +352,7 @@ ez_offline() {
     if [[ -n $ONLINE ]];then
         "$py" -c 'from setuptools.command.easy_install import main; main()' -f "$fl" "$egg" || die "easy install(online) failed for egg $egg"
     else
-        "$py" -c 'from setuptools.command.easy_install import main; main()' "$ez" -H None -f "$fl" "$egg" || die "easy install (offline) failed for egg $egg"
+        "$py" -c 'from setuptools.command.easy_install import main; main()' -H None -f "$fl" "$egg" || die "easy install (offline) failed for egg $egg"
     fi
 }
 
