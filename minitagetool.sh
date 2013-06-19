@@ -694,10 +694,16 @@ install_cgwb() {
 }
 
 install_project() {
-    green "Installing project : $1"
+    local args="-NRv"
+    if [[ -n ${PROJECT_UPGRADE} ]];then
+        green "Installing project : $1"
+        args="${args}uU"
+    else
+        green "Upgrading project : $1"
+    fi
     minimerge_wrapper --only-dependencies $i
     minimerge_wrapper -NE $1
-    minimerge_wrapper -aNRv $i
+    minimerge_wrapper $args $i
 }
 
 fetch_initial_deps() {
@@ -716,6 +722,11 @@ have_python() {
         fi
     done
     echo $ret
+}
+
+upgrade() {
+    green "Running $THIS in upgrade mode"
+    PROJECT_UPGRADE="y" deploy $@
 }
 
 offlinedeploy() {
@@ -1053,8 +1064,14 @@ usage_bootstrap() {
 
 usage_selfupgrade(){
     red "Upgrade minitage"
-    green "     $w/$THIS selfupgrade"
+    green "     $w/$THIS selfupgrade [<project minibuild>]"
 }
+
+usage_upgrade(){
+    red "Upgrade project"
+    green "     $w/$THIS upgrade <project minibuild>"
+}
+
 
 usage_cgwb(){
     red "Launch cgwb"
@@ -1072,6 +1089,8 @@ usage() {
     log
     usage_deploy
     log
+    usage_upgrade
+    log
     usage_offlinedeploy
     log
     usage_offlineupgrade
@@ -1088,7 +1107,7 @@ usage() {
 }
 script_usage="usage"
 script_usage_self="bootstrap|selfupgrade|offlineupgrade"
-script_usage_deploy="deploy|offlinedeploy|snapshot|cgwb"
+script_usage_deploy="deploy|upgrade|offlinedeploy|snapshot|cgwb"
 script_usage_intern="refresh|checkout_or_update|eggpush|mount|sync|push"
 short_usage() {
     echo
@@ -1099,9 +1118,9 @@ short_usage() {
     sgreen "$0 $(syellow "Use:      ")$(sred  ${script_usage_deploy})"
     sgreen "$0 $(syellow "Internal: ")$(sred  ${script_usage_intern})"
 }
-help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb offlineupgrade"
+help_commands="bootstrap snapshot deploy bootstrap offlinedeploy selfupgrade cgwb offlineupgrade upgrade"
 case $command in
-    deploy_minitage|eggpush|offlineupgrade|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
+    deploy_minitage|eggpush|upgrade|offlineupgrade|offlinedeploy|bootstrap|push|deploy|do_selfupgrade|snapshot|sync|refresh|checkout_or_update|selfupgrade|cgwb) $command ${COMMAND_ARGS} ;;
     mount) do_${command} ${COMMAND_ARGS};;
     help|--help|-h|usage)
         for i in ${COMMAND_ARGS};do
