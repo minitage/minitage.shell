@@ -86,6 +86,8 @@ python_md5="$python27_md5"
 
 openssl_mirror="http://www.openssl.org/source/openssl-1.0.1e.tar.gz"
 openssl_md5="66bf6f10f060d561929de96f9dfe5b8c"
+openssl_perl_patch_mirror="https://raw.github.com/minitage-dependencies/openssl-1/master/perl.patch"
+openssl_perl_patch_md5="b72eeff7aaade978302cd96b27ec0cb4" 
 
 ez_mirror="http://python-distribute.org/distribute_setup.py"
 ez_mirror="https://bitbucket.org/pypa/setuptools/raw/0.7.2/ez_setup.py"
@@ -372,6 +374,8 @@ compile_openssl(){
     mkdir_and_gointo "openssl"
     local myfullpath="${LAST_DOWNLOADED_FILE}"
     tar xzvf "$myfullpath" -C .
+    download "$openssl_perl_patch_mirror" "$openssl_perl_patch_md5"
+    patch -Np0 < "${LAST_DOWNLOADED_FILE}"
     cd *
     red "Compiling openssl"
     if [[ $UNAME == 'FreeBSD' ]];then
