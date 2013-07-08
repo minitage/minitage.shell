@@ -295,7 +295,7 @@ deploy_minitage() {
     install_minitage
     if [[ -n $ONLINE ]] && [[ -n ${SYNC} ]];then
         minimerge_wrapper -s
-        do_step fetch_initial_deps
+        #do_step fetch_initial_deps
     fi
     install_minitage_python
 }
