@@ -31,7 +31,7 @@ echo "Using $URL";read
 rm -rf .git
 git init
 git config github.user kiorky
-git config user.email  kiorky@cryptelium.net
+git config user.email  freesoftware@makina-corpus.com
 git config user.name  kiorky
 git config branch.master.merge refs/heads/master
 git config branch.master.remote origin
